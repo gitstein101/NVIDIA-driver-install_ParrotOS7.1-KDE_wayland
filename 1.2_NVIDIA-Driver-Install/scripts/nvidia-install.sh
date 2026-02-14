@@ -3,7 +3,7 @@
 # NVIDIA Driver Installation Script v1.2
 # Automated installation with dual-GPU support and Wayland/X11 session choice
 
-set -e
+set -euo pipefail
 
 # Colors
 RED='\033[0;31m'
@@ -47,7 +47,7 @@ echo ""
 # Function to detect GPU
 detect_gpu() {
     echo -e "${BLUE}=== Detecting GPU ===${NC}"
-    GPU_INFO=$(lspci | grep -i "vga\|3d")
+    GPU_INFO=$(lspci | grep -i "vga\|3d" || true)
     echo "$GPU_INFO"
 
     if echo "$GPU_INFO" | grep -qi "nvidia"; then
@@ -67,12 +67,12 @@ detect_gpu() {
 detect_dual_gpu() {
     echo -e "\n${BLUE}=== Checking for Dual-GPU Configuration ===${NC}"
 
-    VGA_COUNT=$(lspci | grep -ci "vga\|3d")
+    VGA_COUNT=$(lspci | grep -ci "vga\|3d" || true)
     echo "Found $VGA_COUNT GPU device(s):"
-    lspci | grep -i "vga\|3d"
+    lspci | grep -i "vga\|3d" || true
     echo ""
 
-    if [ "$VGA_COUNT" -gt 1 ]; then
+    if [ "${VGA_COUNT:-0}" -gt 1 ]; then
         DUAL_GPU=true
         echo -e "${YELLOW}Dual-GPU system detected${NC}"
 
@@ -142,7 +142,7 @@ check_prerequisites() {
 
     # Check kernel headers
     if [ "$DISTRO" = "debian" ]; then
-        if ! dpkg -l | grep -q "linux-headers-$(uname -r)"; then
+        if ! dpkg -l 2>/dev/null | grep -q "linux-headers-$(uname -r)"; then
             echo -e "${YELLOW}Installing kernel headers...${NC}"
             apt install -y "linux-headers-$(uname -r)"
         else
@@ -189,13 +189,13 @@ remove_old_drivers() {
     echo -e "\n${BLUE}=== Removing Old Drivers ===${NC}"
 
     if [ "$DISTRO" = "debian" ]; then
-        if dpkg -l | grep -q nvidia; then
+        if dpkg -l 2>/dev/null | grep -q nvidia; then
             echo "Removing existing NVIDIA packages..."
             apt remove --purge -y '^nvidia-.*' '^libnvidia-.*' || true
             apt autoremove -y
         fi
     elif [ "$DISTRO" = "arch" ]; then
-        if pacman -Q | grep -q nvidia; then
+        if pacman -Q 2>/dev/null | grep -q nvidia; then
             echo "Removing existing NVIDIA packages..."
             pacman -R --noconfirm nvidia nvidia-utils nvidia-settings 2>/dev/null || true
         fi
@@ -220,8 +220,8 @@ install_nvidia() {
         if command -v ubuntu-drivers &> /dev/null; then
             echo "Detecting recommended driver..."
             ubuntu-drivers devices
-            RECOMMENDED=$(ubuntu-drivers devices | grep recommended | awk '{print $3}')
-            if [ -n "$RECOMMENDED" ]; then
+            RECOMMENDED=$(ubuntu-drivers devices 2>/dev/null | grep recommended | awk '{print $3}' || true)
+            if [ -n "${RECOMMENDED:-}" ]; then
                 echo "Installing recommended driver: $RECOMMENDED"
                 apt install -y "$RECOMMENDED" nvidia-settings
             else
@@ -319,7 +319,7 @@ configure_wayland() {
     echo "  __GLX_VENDOR_LIBRARY_NAME=nvidia"
 
     # Configure SDDM for Wayland session if SDDM is the display manager
-    if systemctl list-unit-files | grep -q "sddm.service"; then
+    if systemctl list-unit-files 2>/dev/null | grep -q "sddm.service"; then
         echo ""
         echo "SDDM display manager detected — configuring Wayland session..."
         mkdir -p /etc/sddm.conf.d
@@ -353,7 +353,7 @@ EOF
     fi
 
     # Configure GDM for Wayland if GDM is the display manager
-    if systemctl list-unit-files | grep -q "gdm.service"; then
+    if systemctl list-unit-files 2>/dev/null | grep -q "gdm.service"; then
         echo ""
         echo "GDM display manager detected..."
         GDM_CONF="/etc/gdm3/daemon.conf"
@@ -378,7 +378,7 @@ configure_dual_gpu() {
     echo -e "\n${BLUE}=== Configuring Dual-GPU (NVIDIA as Primary) ===${NC}"
 
     # Auto-detect NVIDIA PCI BusID
-    NVIDIA_BUSID=$(lspci | grep -i "vga.*nvidia\|3d.*nvidia" | head -1 | cut -d' ' -f1 | sed 's/\./:/')
+    NVIDIA_BUSID=$(lspci | grep -i "vga.*nvidia\|3d.*nvidia" | head -1 | cut -d' ' -f1 | sed 's/\./:/' || true)
     if [ -z "$NVIDIA_BUSID" ]; then
         echo -e "${RED}Could not detect NVIDIA BusID${NC}"
         return
@@ -394,7 +394,7 @@ configure_dual_gpu() {
         echo "Creating X11 configuration with NVIDIA BusID..."
 
         # Auto-detect GPU board name
-        GPU_NAME=$(lspci | grep -i "vga.*nvidia\|3d.*nvidia" | head -1 | sed 's/.*: //')
+        GPU_NAME=$(lspci | grep -i "vga.*nvidia\|3d.*nvidia" | head -1 | sed 's/.*: //' || true)
 
         cat > /etc/X11/xorg.conf << EOF
 # Dual GPU Configuration — Force NVIDIA as Primary
@@ -523,9 +523,9 @@ verify_installation() {
 
     echo "NVIDIA packages installed:"
     if [ "$DISTRO" = "debian" ]; then
-        dpkg -l | grep nvidia | grep ^ii || echo "  (none found — may need reboot)"
+        dpkg -l 2>/dev/null | grep nvidia | grep ^ii || echo "  (none found — may need reboot)"
     elif [ "$DISTRO" = "arch" ]; then
-        pacman -Q | grep nvidia || echo "  (none found — may need reboot)"
+        pacman -Q 2>/dev/null | grep nvidia || echo "  (none found — may need reboot)"
     fi
 
     echo ""
