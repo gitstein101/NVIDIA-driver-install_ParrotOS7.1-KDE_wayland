@@ -1,0 +1,240 @@
+NVIDIA Driver Diagnostic Report
+Generated: Fr 13 Feb 2026 14:42:45 CET
+System: parrot
+==========================================
+
+[0;32m=== System Information ===[0m
+Hostname: parrot
+Kernel: 6.17.13+2-amd64
+Distribution: Description:	Parrot Security 7.1 (echo)
+Architecture: x86_64
+Boot parameters: BOOT_IMAGE=/@/boot/vmlinuz-6.17.13+2-amd64 root=UUID=8c8c7cef-fb8d-48b8-b15d-c4778e86f613 ro rootflags=subvol=@ quiet splash noautomount quiet splash resume=UUID=c4323d62-0830-4712-be1d-03edb382e261
+
+[0;32m=== GPU Hardware Detection ===[0m
+=== PCI Graphics Devices ===
+00:02.0 VGA compatible controller: Intel Corporation Xeon E3-1200 v3/4th Gen Core Processor Integrated Graphics Controller (rev 06)
+	Subsystem: Gigabyte Technology Co., Ltd Device d000
+	Kernel driver in use: i915
+	Kernel modules: i915
+--
+01:00.0 VGA compatible controller: NVIDIA Corporation GP108 [GeForce GT 1030] (rev a1)
+	Subsystem: Gigabyte Technology Co., Ltd Device 3767
+	Kernel driver in use: nouveau
+	Kernel modules: nouveau
+
+=== GPU Details ===
+00:02.0 VGA compatible controller: Intel Corporation Xeon E3-1200 v3/4th Gen Core Processor Integrated Graphics Controller (rev 06) (prog-if 00 [VGA controller])
+	Subsystem: Gigabyte Technology Co., Ltd Device d000
+	Flags: bus master, fast devsel, latency 0, IRQ 38, IOMMU group 0
+	Memory at f7400000 (64-bit, non-prefetchable) [size=4M]
+	Memory at d0000000 (64-bit, prefetchable) [size=256M]
+	I/O ports at f000 [size=64]
+	Expansion ROM at 000c0000 [virtual] [disabled] [size=128K]
+	Capabilities: [90] MSI: Enable+ Count=1/1 Maskable- 64bit-
+	Capabilities: [d0] Power Management version 2
+	Capabilities: [a4] PCI Advanced Features
+	Kernel driver in use: i915
+	Kernel modules: i915
+
+00:14.0 USB controller: Intel Corporation 8 Series/C220 Series Chipset Family USB xHCI (rev 05) (prog-if 30 [XHCI])
+	Subsystem: Gigabyte Technology Co., Ltd Device 5007
+	Flags: bus master, medium devsel, latency 0, IRQ 31, IOMMU group 3
+--
+01:00.0 VGA compatible controller: NVIDIA Corporation GP108 [GeForce GT 1030] (rev a1) (prog-if 00 [VGA controller])
+	Subsystem: Gigabyte Technology Co., Ltd Device 3767
+	Flags: bus master, fast devsel, latency 0, IRQ 37, IOMMU group 2
+	Memory at f6000000 (32-bit, non-prefetchable) [size=16M]
+	Memory at e0000000 (64-bit, prefetchable) [size=256M]
+	Memory at f0000000 (64-bit, prefetchable) [size=32M]
+	I/O ports at e000 [size=128]
+	Expansion ROM at 000c0000 [disabled] [size=128K]
+	Capabilities: [60] Power Management version 3
+	Capabilities: [68] MSI: Enable+ Count=1/1 Maskable- 64bit+
+	Capabilities: [78] Express Legacy Endpoint, IntMsgNum 0
+	Capabilities: [100] Virtual Channel
+	Capabilities: [250] Latency Tolerance Reporting
+	Capabilities: [128] Power Budgeting <?>
+	Capabilities: [420] Advanced Error Reporting
+	Capabilities: [600] Vendor Specific Information: ID=0001 Rev=1 Len=024 <?>
+
+[0;32m=== Current Driver Status ===[0m
+=== Loaded Modules ===
+[1;33m[WARNING][0m No NVIDIA modules loaded
+[1;33m[WARNING][0m No NVIDIA modules loaded
+[1;33m[WARNING][0m Nouveau driver is loaded (conflicts with NVIDIA)
+[1;33m[WARNING][0m Nouveau driver is loaded (conflicts with NVIDIA)
+nouveau              3338240  52
+mxm_wmi                12288  1 nouveau
+drm_gpuvm              53248  1 nouveau
+gpu_sched              69632  1 nouveau
+drm_ttm_helper         16384  3 vmwgfx,nouveau
+ttm                   135168  4 vmwgfx,drm_ttm_helper,i915,nouveau
+drm_exec               12288  2 drm_gpuvm,nouveau
+i2c_algo_bit           16384  2 i915,nouveau
+drm_display_helper    303104  2 i915,nouveau
+drm_client_lib         12288  3 vmwgfx,i915,nouveau
+drm_kms_helper        258048  6 vmwgfx,drm_display_helper,drm_ttm_helper,drm_client_lib,i915,nouveau
+drm                   843776  36 vmwgfx,gpu_sched,drm_kms_helper,drm_exec,drm_gpuvm,drm_display_helper,drm_buddy,drm_ttm_helper,drm_client_lib,i915,ttm,nouveau
+video                  81920  2 i915,nouveau
+wmi                    28672  3 video,mxm_wmi,nouveau
+button                 28672  1 nouveau
+
+=== NVIDIA Driver Version ===
+[1;33m[WARNING][0m nvidia-smi not available
+[1;33m[WARNING][0m nvidia-smi not available
+
+[0;32m=== Installed NVIDIA Packages ===[0m
+=== Debian/Ubuntu packages ===
+ii  firmware-nvidia-graphics                            20250410-2                           all          Binary firmware for Nvidia GPU chips
+
+[0;32m=== Driver Blacklist Configuration ===[0m
+[1;33m[WARNING][0m Nouveau not blacklisted
+[1;33m[WARNING][0m Nouveau not blacklisted
+
+=== All blacklist files ===
+None found
+
+[0;32m=== X Server Configuration ===[0m
+=== X Display ===
+DISPLAY: :0
+No /etc/X11/xorg.conf found
+
+=== /etc/X11/xorg.conf.d/ contents ===
+total 4
+drwxr-xr-x 1 root root  32 11. Feb 13:35 .
+drwxr-xr-x 1 root root 288 23. Dez 18:51 ..
+-rw-rw-r-- 1 root root 263 11. Feb 13:35 00-keyboard.conf
+--- /etc/X11/xorg.conf.d/00-keyboard.conf ---
+# Read and parsed by systemd-localed. It's probably wise not to edit this file
+# manually too freely.
+Section "InputClass"
+        Identifier "system-keyboard"
+        MatchIsKeyboard "on"
+        Option "XkbLayout" "de"
+        Option "XkbVariant" ""
+EndSection
+
+[0;32m=== Display Manager Status ===[0m
+=== Active Display Manager ===
+● lightdm.service - Light Display Manager
+     Loaded: loaded (/usr/lib/systemd/system/lightdm.service; enabled; preset: enabled)
+     Active: active (running) since Fri 2026-02-13 08:43:32 CET; 5h 59min ago
+ Invocation: d2f288aeb503425c8ab555ad2ecbb4b2
+       Docs: man:lightdm(1)
+   Main PID: 1048 (lightdm)
+      Tasks: 4 (limit: 18645)
+     Memory: 154.7M (peak: 211.5M)
+        CPU: 1.213s
+     CGroup: /system.slice/lightdm.service
+             └─1048 /usr/sbin/lightdm
+
+Feb 13 08:43:32 parrot systemd[1]: Starting lightdm.service - Light Display Manager...
+Feb 13 08:43:32 parrot systemd[1]: Started lightdm.service - Light Display Manager.
+Feb 13 08:43:34 parrot lightdm[1092]: pam_unix(lightdm-greeter:session): session opened for user lightdm(uid=117) by (uid=0)
+Feb 13 08:43:34 parrot lightdm[1092]: pam_unix(lightdm-greeter:session): session opened for user lightdm(uid=117) by (uid=0)
+Feb 13 08:43:46 parrot lightdm[1209]: gkr-pam: unable to locate daemon control file
+Feb 13 08:43:46 parrot lightdm[1209]: gkr-pam: stashed password to try later in open session
+Feb 13 08:43:46 parrot lightdm[1209]: pam_unix(lightdm:session): session opened for user crootstein(uid=1000) by crootstein(uid=0)
+Feb 13 08:43:46 parrot lightdm[1209]: gkr-pam: unlocked login keyring
+
+=== Enabled Display Managers ===
+lightdm.service                                                           enabled         enabled
+sddm.service                                                              disabled        enabled
+
+[0;32m=== Recent Relevant Logs ===[0m
+=== Kernel Messages (NVIDIA/Nouveau) ===
+[    1.798220] nouveau 0000:01:00.0: NVIDIA GP108 (138000a1)
+[    1.909641] nouveau 0000:01:00.0: bios: version 86.08.24.00.15
+[    1.909895] nouveau 0000:01:00.0: pmu: firmware unavailable
+[    1.910886] nouveau 0000:01:00.0: vgaarb: deactivate vga console
+[    1.910995] nouveau 0000:01:00.0: fb: 2048 MiB GDDR5
+[    1.922226] nouveau 0000:01:00.0: drm: VRAM: 2048 MiB
+[    1.922229] nouveau 0000:01:00.0: drm: GART: 536870912 MiB
+[    1.922245] nouveau 0000:01:00.0: drm: BIT table 'A' not found
+[    1.922246] nouveau 0000:01:00.0: drm: BIT table 'L' not found
+[    1.922247] nouveau 0000:01:00.0: drm: TMDS table version 2.0
+[    1.925607] nouveau 0000:01:00.0: drm: MM: using COPY for buffer copies
+[    1.985571] [drm] Initialized nouveau 1.4.0 for 0000:01:00.0 on minor 0
+[    2.052939] fbcon: nouveaudrmfb (fb0) is primary device
+[    2.090714] nouveau 0000:01:00.0: [drm] fb0: nouveaudrmfb frame buffer device
+[    2.168512] nouveau 0000:01:00.0: vgaarb: VGA decodes changed: olddecodes=io+mem,decodes=none:owns=io+mem
+[    4.458837] snd_hda_intel 0000:01:00.1: bound 0000:01:00.0 (ops nv50_audio_component_bind_ops [nouveau])
+[    4.463407] input: HDA NVidia HDMI/DP,pcm=3 as /devices/pci0000:00/0000:00:01.0/0000:01:00.1/sound/card1/input10
+[    4.463461] input: HDA NVidia HDMI/DP,pcm=7 as /devices/pci0000:00/0000:00:01.0/0000:01:00.1/sound/card1/input11
+[    4.463516] input: HDA NVidia HDMI/DP,pcm=8 as /devices/pci0000:00/0000:00:01.0/0000:01:00.1/sound/card1/input12
+[    4.463557] input: HDA NVidia HDMI/DP,pcm=9 as /devices/pci0000:00/0000:00:01.0/0000:01:00.1/sound/card1/input13
+
+=== System Journal (last boot) ===
+Feb 13 08:43:30 parrot kernel: nouveau 0000:01:00.0: NVIDIA GP108 (138000a1)
+Feb 13 08:43:30 parrot kernel: nouveau 0000:01:00.0: bios: version 86.08.24.00.15
+Feb 13 08:43:30 parrot kernel: nouveau 0000:01:00.0: pmu: firmware unavailable
+Feb 13 08:43:30 parrot kernel: nouveau 0000:01:00.0: vgaarb: deactivate vga console
+Feb 13 08:43:30 parrot kernel: nouveau 0000:01:00.0: fb: 2048 MiB GDDR5
+Feb 13 08:43:30 parrot kernel: nouveau 0000:01:00.0: drm: VRAM: 2048 MiB
+Feb 13 08:43:30 parrot kernel: nouveau 0000:01:00.0: drm: GART: 536870912 MiB
+Feb 13 08:43:30 parrot kernel: nouveau 0000:01:00.0: drm: BIT table 'A' not found
+Feb 13 08:43:30 parrot kernel: nouveau 0000:01:00.0: drm: BIT table 'L' not found
+Feb 13 08:43:30 parrot kernel: nouveau 0000:01:00.0: drm: TMDS table version 2.0
+Feb 13 08:43:30 parrot kernel: nouveau 0000:01:00.0: drm: MM: using COPY for buffer copies
+Feb 13 08:43:30 parrot kernel: [drm] Initialized nouveau 1.4.0 for 0000:01:00.0 on minor 0
+Feb 13 08:43:30 parrot kernel: fbcon: nouveaudrmfb (fb0) is primary device
+Feb 13 08:43:30 parrot kernel: nouveau 0000:01:00.0: [drm] fb0: nouveaudrmfb frame buffer device
+Feb 13 08:43:30 parrot kernel: nouveau 0000:01:00.0: vgaarb: VGA decodes changed: olddecodes=io+mem,decodes=none:owns=io+mem
+Feb 13 08:43:30 parrot kernel: snd_hda_intel 0000:01:00.1: bound 0000:01:00.0 (ops nv50_audio_component_bind_ops [nouveau])
+Feb 13 08:43:30 parrot kernel: input: HDA NVidia HDMI/DP,pcm=3 as /devices/pci0000:00/0000:00:01.0/0000:01:00.1/sound/card1/input10
+Feb 13 08:43:30 parrot kernel: input: HDA NVidia HDMI/DP,pcm=7 as /devices/pci0000:00/0000:00:01.0/0000:01:00.1/sound/card1/input11
+Feb 13 08:43:30 parrot kernel: input: HDA NVidia HDMI/DP,pcm=8 as /devices/pci0000:00/0000:00:01.0/0000:01:00.1/sound/card1/input12
+Feb 13 08:43:30 parrot kernel: input: HDA NVidia HDMI/DP,pcm=9 as /devices/pci0000:00/0000:00:01.0/0000:01:00.1/sound/card1/input13
+Feb 13 08:43:32 parrot sensors[939]: nouveau-pci-0100
+Feb 13 08:43:49 parrot ksystemstats[1693]: org.kde.ksystemstats.gpu: Could not retrieve information for NVidia GPU "0000:01:00.0"
+Feb 13 14:42:45 parrot sudo[5396]: crootstein : TTY=pts/1 ; PWD=/mnt/bigdrv/NV-InstalClaudeCode/NVIDIA-Driver-Install/scripts ; USER=root ; COMMAND=./nvidia-diagnose.sh
+
+=== X Server Log (errors/warnings) ===
+[     6.453] Current Operating System: Linux parrot 6.17.13+2-amd64 #1 SMP PREEMPT_DYNAMIC Parrot 6.17.13-1parrot1 (2026-01-08) x86_64
+	(WW) warning, (EE) error, (NI) not implemented, (??) unknown.
+[     6.456] (WW) The directory "/usr/share/fonts/X11/cyrillic" does not exist.
+[     6.457] (WW) The directory "/usr/share/fonts/X11/75dpi/" does not exist.
+[     6.457] (WW) The directory "/usr/share/fonts/X11/75dpi" does not exist.
+[     6.952] (WW) Falling back to old probe method for fbdev
+[     7.700] (II) Initializing extension MIT-SCREEN-SAVER
+[     7.792] (WW) Option "xkb_variant" requires a string value
+[     7.856] (WW) Option "xkb_variant" requires a string value
+[     7.880] (WW) Option "xkb_variant" requires a string value
+[     7.896] (WW) Option "xkb_variant" requires a string value
+[     7.904] (WW) Option "xkb_variant" requires a string value
+[     7.932] (WW) Option "xkb_variant" requires a string value
+[     8.148] (WW) Option "xkb_variant" requires a string value
+
+[0;32m=== OpenGL Information ===[0m
+=== GLX Info ===
+OpenGL vendor string: Mesa
+OpenGL renderer string: NV138
+OpenGL version string: 4.3 (Compatibility Profile) Mesa 25.0.7-2
+
+[0;32m=== GRUB Configuration ===[0m
+=== /etc/default/grub ===
+GRUB_CMDLINE_LINUX_DEFAULT='quiet splash resume=UUID=c4323d62-0830-4712-be1d-03edb382e261'
+GRUB_CMDLINE_LINUX=""
+
+[0;32m=== Kernel Headers ===[0m
+ii  linux-headers-6.17.13+2-amd64                       6.17.13-1parrot1                     amd64        Header files for Linux 6.17.13+2-amd64
+ii  linux-headers-6.17.13+2-common                      6.17.13-1parrot1                     all          Common header files for Linux 6.17.13+2
+
+[0;32m=== Common Issues Analysis ===[0m
+[0;31m[ERROR][0m Nouveau driver is loaded - this conflicts with NVIDIA
+[0;31m[ERROR][0m Nouveau driver is loaded - this conflicts with NVIDIA
+  Fix: Blacklist nouveau in /etc/modprobe.d/blacklist-nouveau.conf
+
+[0;32m=== Diagnostic Summary ===[0m
+Full diagnostic log saved to: nvidia-diagnostic-20260213-144245.log
+
+Next steps:
+1. Review the issues found above
+2. Check the full log file for detailed information
+3. Refer to the main README.md for solutions
+
+Quick checks:
+  - GPU detected: Yes
+  - NVIDIA loaded: No
+  - Nouveau loaded: Yes (CONFLICT!)
+  - Display manager: active
