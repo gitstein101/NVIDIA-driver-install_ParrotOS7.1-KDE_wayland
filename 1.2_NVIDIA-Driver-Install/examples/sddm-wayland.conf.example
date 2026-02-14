@@ -1,0 +1,28 @@
+# Example SDDM configuration for Wayland sessions
+# Location: /etc/sddm.conf.d/10-wayland.conf
+#
+# This configures SDDM to run its greeter on Wayland.
+# For a "both" setup (X11 + Wayland available), set DisplayServer=x11
+# and select the Wayland session from the login screen dropdown.
+
+# === Option 1: Wayland-only (SDDM greeter runs on Wayland) ===
+
+[General]
+DisplayServer=wayland
+GreeterEnvironment=QT_WAYLAND_SHELL_INTEGRATION=layer-shell
+
+[Wayland]
+CompositorCommand=kwin_wayland --drm --no-lockscreen --no-global-shortcuts --locale1
+
+# === Option 2: X11 greeter with Wayland sessions available ===
+# (Uncomment below and comment out Option 1)
+
+# [General]
+# DisplayServer=x11
+# Session=plasmawayland.desktop
+
+# === Option 3: Force a specific default session ===
+
+# [General]
+# Session=plasmawayland.desktop    # Default to Wayland
+# Session=plasma.desktop           # Default to X11
