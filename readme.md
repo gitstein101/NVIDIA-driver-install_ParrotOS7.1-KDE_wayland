@@ -1,0 +1,1 @@
+2026 - Install SCRIPT NVIDIA parrotOS7.1 KDE WAYLAND
