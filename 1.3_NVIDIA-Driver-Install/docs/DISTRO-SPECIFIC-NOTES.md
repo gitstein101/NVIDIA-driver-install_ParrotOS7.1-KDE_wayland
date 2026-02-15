@@ -175,151 +175,6 @@ lspci | grep VGA  # Confirm GPU is visible
 
 ---
 
-## BlackArch Linux
-
-### System Details
-- **Base**: Arch Linux (rolling release)
-- **Package Manager**: pacman
-- **Init System**: systemd
-- **Kernel**: Latest mainline
-
-### Known Issues
-
-#### 1. Rolling Release Kernel Updates
-**Problem**: Kernel updates can break NVIDIA driver if not using DKMS.
-
-**Solution**: Always use DKMS version
-```bash
-# Remove standard driver if installed
-sudo pacman -R nvidia
-
-# Install DKMS version
-sudo pacman -S nvidia-dkms nvidia-utils nvidia-settings
-
-# DKMS will automatically rebuild on kernel updates
-```
-
-#### 2. Multiple Kernel Support
-**Problem**: BlackArch supports multiple kernels (linux, linux-lts, linux-zen, linux-hardened).
-
-**Solution**: Install driver for your kernel
-```bash
-# Check active kernel
-uname -r
-
-# For linux kernel:
-sudo pacman -S nvidia-dkms
-
-# For linux-lts:
-sudo pacman -S nvidia-lts
-
-# Always install headers for your kernel
-sudo pacman -S linux-headers  # or linux-lts-headers
-```
-
-#### 3. GRUB Configuration Issues
-**Problem**: GRUB entries missing or incorrect after installation.
-
-**Solution**: Regenerate GRUB config
-```bash
-sudo grub-mkconfig -o /boot/grub/grub.cfg
-
-# Or if using os-prober:
-sudo pacman -S os-prober
-sudo grub-mkconfig -o /boot/grub/grub.cfg
-```
-
-#### 4. initramfs Hooks
-**Problem**: NVIDIA modules not in initramfs, causing boot issues.
-
-**Solution**: Add NVIDIA to mkinitcpio
-```bash
-sudo nano /etc/mkinitcpio.conf
-
-# Add to MODULES:
-MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)
-
-# Regenerate all initramfs
-sudo mkinitcpio -P
-```
-
-#### 5. KDE Plasma Wayland on Arch
-**Setup**:
-```bash
-# Install Wayland support
-sudo pacman -S egl-wayland
-
-# Set environment variables
-sudo tee -a /etc/environment << EOF
-GBM_BACKEND=nvidia-drm
-__GLX_VENDOR_LIBRARY_NAME=nvidia
-EOF
-
-# Ensure nvidia-drm.modeset=1 in GRUB
-sudo nano /etc/default/grub
-sudo grub-mkconfig -o /boot/grub/grub.cfg
-```
-
-### Recommended Installation Method
-
-```bash
-# 1. Update system
-sudo pacman -Syu
-
-# 2. Install kernel headers
-sudo pacman -S linux-headers  # Match your kernel version
-
-# 3. Remove nouveau if present
-sudo pacman -R xf86-video-nouveau
-
-# 4. Install NVIDIA with DKMS
-sudo pacman -S nvidia-dkms nvidia-utils nvidia-settings
-
-# 5. Install Wayland support (optional)
-sudo pacman -S egl-wayland
-
-# 6. Add early KMS start
-sudo nano /etc/mkinitcpio.conf
-# Add to MODULES: nvidia nvidia_modeset nvidia_uvm nvidia_drm
-# Add to HOOKS (after base): kms
-
-# 7. Regenerate initramfs
-sudo mkinitcpio -P
-
-# 8. Add kernel parameter
-sudo nano /etc/default/grub
-# Add to GRUB_CMDLINE_LINUX_DEFAULT: nvidia-drm.modeset=1
-
-# 9. Regenerate GRUB
-sudo grub-mkconfig -o /boot/grub/grub.cfg
-
-# 10. Reboot
-sudo reboot
-```
-
-### Troubleshooting BlackArch
-
-**Kernel update broke driver**:
-```bash
-# Rebuild DKMS modules
-sudo dkms autoinstall
-
-# Or reinstall driver
-sudo pacman -S nvidia-dkms --overwrite '*'
-```
-
-**Module won't load**:
-```bash
-# Check module errors
-sudo modprobe nvidia
-dmesg | tail -20
-
-# Rebuild initramfs
-sudo mkinitcpio -P
-```
-
----
-
 ## Kali Linux
 
 ### System Details
@@ -440,45 +295,45 @@ sudo reboot
 
 ## Comparative Table
 
-| Feature | Parrot OS 7 | BlackArch | Kali Linux |
-|---------|-------------|-----------|------------|
-| Base | Debian 12 | Arch Linux | Debian Testing |
-| Package Manager | APT | pacman | APT |
-| Kernel Updates | Stable | Rolling | Semi-rolling |
-| NVIDIA Complexity | Medium | Medium-High | Medium |
-| Recommended Driver | nvidia-driver | nvidia-dkms | nvidia-driver |
-| Main Issue | SDDM conflicts | Kernel updates | DE variety |
-| Stability | High | Medium | Medium-High |
-| Best Display Manager | LightDM (X11) / SDDM (Wayland) | LightDM/SDDM | LightDM |
+| Feature | Parrot OS 7 | Kali Linux | Ubuntu / Debian |
+|---------|-------------|------------|-----------------|
+| Base | Debian 12 | Debian Testing | Debian Stable / Ubuntu |
+| Package Manager | APT | APT | APT |
+| Kernel Updates | Stable | Semi-rolling | Stable |
+| NVIDIA Complexity | Medium | Medium | Low |
+| Recommended Driver | nvidia-driver | nvidia-driver | nvidia-driver |
+| Main Issue | SDDM conflicts | DE variety | Minimal |
+| Stability | High | Medium-High | High |
+| Best Display Manager | LightDM (X11) / SDDM (Wayland) | LightDM | GDM / LightDM |
 | Wayland Support | Good (KDE Plasma) | Good | Good |
 
 ---
 
-## Distribution-Specific Commands Cheatsheet
+## Quick Commands Reference
 
 ### Package Management
 
-| Task | Parrot/Kali/Debian | BlackArch/Arch |
-|------|-------------------|----------------|
-| Update | `sudo apt update` | `sudo pacman -Sy` |
-| Upgrade | `sudo apt upgrade` | `sudo pacman -Syu` |
-| Install | `sudo apt install pkg` | `sudo pacman -S pkg` |
-| Remove | `sudo apt remove pkg` | `sudo pacman -R pkg` |
-| Search | `apt search pkg` | `pacman -Ss pkg` |
-| List installed | `dpkg -l \| grep nvidia` | `pacman -Q \| grep nvidia` |
+| Task | Command |
+|------|---------|
+| Update | `sudo apt update` |
+| Upgrade | `sudo apt upgrade` |
+| Install | `sudo apt install pkg` |
+| Remove | `sudo apt remove pkg` |
+| Search | `apt search pkg` |
+| List installed | `dpkg -l \| grep nvidia` |
 
 ### initramfs
 
-| Task | Debian-based | Arch-based |
-|------|--------------|------------|
-| Update | `sudo update-initramfs -u` | `sudo mkinitcpio -P` |
-| Update all | `sudo update-initramfs -u -k all` | `sudo mkinitcpio -P` |
+| Task | Command |
+|------|---------|
+| Update | `sudo update-initramfs -u` |
+| Update all | `sudo update-initramfs -u -k all` |
 
 ### GRUB
 
-| Task | Both |
-|------|------|
-| Update | `sudo update-grub` (Debian) or `sudo grub-mkconfig -o /boot/grub/grub.cfg` (Arch) |
+| Task | Command |
+|------|---------|
+| Update | `sudo update-grub` |
 
 ---
 
@@ -490,13 +345,6 @@ sudo reboot
 - KDE Plasma Wayland works well with driver 495+
 - Add ACPI workarounds if needed
 - Install `libnvidia-egl-wayland1` for Wayland
-
-### For BlackArch:
-- Use `nvidia-dkms` (crucial for rolling release)
-- Add NVIDIA to mkinitcpio MODULES
-- Keep kernel headers updated
-- Regenerate initramfs after every update
-- Install `egl-wayland` for Wayland
 
 ### For Kali Linux:
 - Use `nvidia-driver` package

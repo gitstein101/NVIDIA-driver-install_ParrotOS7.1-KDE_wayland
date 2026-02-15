@@ -8,7 +8,7 @@ This is an NVIDIA driver installation toolkit for Linux, focused on security-ori
 
 **Target hardware**: NVIDIA GeForce GT 1030 (GP108 architecture)
 **Primary OS**: Parrot OS 7.1 (Debian 12 base, KDE Plasma, SDDM, Wayland)
-**Also tested on**: BlackArch Linux (Arch-based), Kali Linux (Debian Testing base)
+**Also tested on**: Kali Linux (Debian Testing base)
 
 ## Repository Structure
 
@@ -21,7 +21,7 @@ This is an NVIDIA driver installation toolkit for Linux, focused on security-ori
     error-handler.sh             # Shared failure logging library
   docs/
     COMMAND-CHEATSHEET.md        # Quick reference for common commands
-    DISTRO-SPECIFIC-NOTES.md     # Debian vs Arch differences
+    DISTRO-SPECIFIC-NOTES.md     # Per-distro guidance (Parrot, Kali, Ubuntu/Debian)
     QUICK-TROUBLESHOOTING.md     # Common issues and fixes
     WAYLAND-SUPPORT.md           # Wayland-specific configuration guide
   examples/                      # Reference config files (xorg.conf, blacklist-nouveau, grub, sddm-wayland, etc.)
@@ -37,9 +37,9 @@ Prior versions (v1.0–v1.2) have been removed but are preserved in git history.
 All three core scripts share a common pattern:
 - Bash with `set -e`, colored output via ANSI escape codes
 - Root check at entry (`$EUID -ne 0`)
-- Distro detection via `/etc/debian_version` (Debian path) or `/etc/arch-release` (Arch path)
+- Distro detection via `/etc/debian_version` (Debian-based only)
 - Interactive `read -p` prompts for destructive or optional operations
-- Package manager abstraction: `apt` for Debian-based, `pacman` for Arch-based
+- Uses `apt` for package management
 
 **nvidia-install.sh** flow: detect GPU -> repair broken dpkg state -> backup configs -> install kernel headers -> blacklist nouveau -> remove old drivers -> install from repos -> detect session type (X11/Wayland/Both) -> configure display manager (SDDM/LightDM/GDM) -> optional dual-GPU setup -> GRUB nvidia-drm.modeset=1 -> verify
 
@@ -65,4 +65,4 @@ All three core scripts share a common pattern:
 
 All scripts require `sudo` and are interactive (use `read -p` for confirmation prompts). They cannot be run non-interactively without modification. Diagnostic logs are written to the same directory as the script with timestamped filenames like `nvidia-diagnostic-YYYYMMDD-HHMMSS.log`.
 
-When modifying scripts, maintain the dual distro-detection pattern (Debian vs Arch) and preserve the interactive safety prompts before destructive operations.
+When modifying scripts, preserve the interactive safety prompts before destructive operations.

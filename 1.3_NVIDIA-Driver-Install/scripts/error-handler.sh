@@ -217,11 +217,7 @@ _write_failure_log() {
         echo ""
 
         echo "--- Installed NVIDIA packages ---"
-        if command -v dpkg &> /dev/null; then
-            dpkg -l 2>/dev/null | grep -i nvidia | grep ^ii || echo "  (none)"
-        elif command -v pacman &> /dev/null; then
-            pacman -Q 2>/dev/null | grep -i nvidia || echo "  (none)"
-        fi
+        dpkg -l 2>/dev/null | grep -i nvidia | grep ^ii || echo "  (none)"
         echo ""
 
         echo "--- Broken/half-installed packages ---"

@@ -194,19 +194,11 @@ print_header "Current Driver Status"
 # 5. Installed Packages
 print_header "Installed NVIDIA Packages"
 {
-    if command -v dpkg &> /dev/null; then
-        echo "=== Debian/Ubuntu packages ==="
-        dpkg -l 2>/dev/null | grep -i nvidia || echo "No NVIDIA packages found"
-        echo ""
-        echo "=== EGL/Wayland packages ==="
-        dpkg -l 2>/dev/null | grep -i "egl-wayland\|libnvidia-egl" || echo "No EGL-Wayland packages found"
-    elif command -v pacman &> /dev/null; then
-        echo "=== Arch packages ==="
-        pacman -Q 2>/dev/null | grep -i nvidia || echo "No NVIDIA packages found"
-        echo ""
-        echo "=== EGL/Wayland packages ==="
-        pacman -Q 2>/dev/null | grep -i "egl-wayland" || echo "No EGL-Wayland packages found"
-    fi
+    echo "=== Installed NVIDIA packages ==="
+    dpkg -l 2>/dev/null | grep -i nvidia || echo "No NVIDIA packages found"
+    echo ""
+    echo "=== EGL/Wayland packages ==="
+    dpkg -l 2>/dev/null | grep -i "egl-wayland\|libnvidia-egl" || echo "No EGL-Wayland packages found"
 } | tee -a "$OUTPUT_FILE"
 
 # 6. Blacklist Configuration
@@ -418,11 +410,7 @@ print_header "GRUB Configuration"
 # 14. Kernel Headers
 print_header "Kernel Headers"
 {
-    if command -v dpkg &> /dev/null; then
-        dpkg -l 2>/dev/null | grep linux-headers | grep "$(uname -r | cut -d'-' -f1)" || echo "No matching headers found"
-    elif command -v pacman &> /dev/null; then
-        pacman -Q 2>/dev/null | grep linux-headers || echo "No matching headers found"
-    fi
+    dpkg -l 2>/dev/null | grep linux-headers | grep "$(uname -r | cut -d'-' -f1)" || echo "No matching headers found"
 } | tee -a "$OUTPUT_FILE"
 
 # 15. NVIDIA Wayland Deep Checks
@@ -531,14 +519,8 @@ print_header "Common Issues Analysis"
 
     # Check for missing kernel headers
     HEADERS_OK=false
-    if command -v dpkg &> /dev/null; then
-        if dpkg -s "linux-headers-$(uname -r)" &>/dev/null; then
-            HEADERS_OK=true
-        fi
-    elif command -v pacman &> /dev/null; then
-        if pacman -Q linux-headers &>/dev/null; then
-            HEADERS_OK=true
-        fi
+    if dpkg -s "linux-headers-$(uname -r)" &>/dev/null; then
+        HEADERS_OK=true
     fi
     if [ "$HEADERS_OK" = false ]; then
         print_warning "Kernel headers may not be installed"
@@ -577,12 +559,10 @@ print_header "Common Issues Analysis"
         fi
 
         # Check EGL wayland library
-        if command -v dpkg &> /dev/null; then
-            if ! dpkg -l 2>/dev/null | grep -q "libnvidia-egl-wayland\|egl-wayland"; then
-                print_warning "EGL-Wayland library not installed"
-                echo "  Fix: apt install libnvidia-egl-wayland1"
-                ISSUES_FOUND=$((ISSUES_FOUND + 1))
-            fi
+        if ! dpkg -l 2>/dev/null | grep -q "libnvidia-egl-wayland\|egl-wayland"; then
+            print_warning "EGL-Wayland library not installed"
+            echo "  Fix: apt install libnvidia-egl-wayland1"
+            ISSUES_FOUND=$((ISSUES_FOUND + 1))
         fi
 
         # Check nvidia-drm.fbdev on kernel 6.x+
@@ -776,11 +756,7 @@ echo -e "\n${BLUE}Generating JSON report: $JSON_FILE${NC}"
     _glx_vendor="${__GLX_VENDOR_LIBRARY_NAME:-}"
 
     _egl_wayland_installed=false
-    if command -v dpkg &> /dev/null; then
-        dpkg -l 2>/dev/null | grep -q "egl-wayland\|libnvidia-egl" && _egl_wayland_installed=true
-    elif command -v pacman &> /dev/null; then
-        pacman -Q 2>/dev/null | grep -q "egl-wayland" && _egl_wayland_installed=true
-    fi
+    dpkg -l 2>/dev/null | grep -q "egl-wayland\|libnvidia-egl" && _egl_wayland_installed=true
 
     _explicit_sync=false
     _k_major=$(echo "$_kernel" | cut -d. -f1)

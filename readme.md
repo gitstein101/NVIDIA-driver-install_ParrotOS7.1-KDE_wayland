@@ -4,7 +4,7 @@ Automated bash scripts for installing, diagnosing, and removing NVIDIA drivers o
 
 **Target hardware**: NVIDIA GeForce GT 1030 (GP108)
 **Primary OS**: Parrot OS 7.1 (Debian 12, KDE Plasma, SDDM, Wayland)
-**Also tested on**: BlackArch Linux, Kali Linux
+**Also tested on**: Kali Linux
 
 ## Features
 

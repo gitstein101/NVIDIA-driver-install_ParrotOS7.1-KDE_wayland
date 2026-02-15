@@ -55,10 +55,8 @@ fi
 # Detect distribution
 if [ -f /etc/debian_version ]; then
     DISTRO="debian"
-elif [ -f /etc/arch-release ]; then
-    DISTRO="arch"
 else
-    echo -e "${RED}Unsupported distribution${NC}"
+    echo -e "${RED}Unsupported distribution — this toolkit supports Debian-based systems only${NC}"
     exit 1
 fi
 
@@ -213,9 +211,6 @@ if [ "$DISTRO" = "debian" ]; then
         apt autoremove -y 2>/dev/null || true
     fi
     apt clean 2>/dev/null || true
-elif [ "$DISTRO" = "arch" ]; then
-    pacman -R --noconfirm nvidia nvidia-utils nvidia-settings nvidia-dkms egl-wayland 2>/dev/null || true
-    pacman -Sc --noconfirm 2>/dev/null || true
 fi
 record_change "Purged NVIDIA packages"
 step_done
@@ -318,11 +313,7 @@ step_done
 # Update initramfs
 set_step 8 "Updating initramfs"
 echo -e "\n${BLUE}=== Updating Initramfs ===${NC}"
-if [ "$DISTRO" = "debian" ]; then
-    update-initramfs -u
-elif [ "$DISTRO" = "arch" ]; then
-    mkinitcpio -P
-fi
+update-initramfs -u
 
 # Ensure fallback driver is available
 echo -e "\n${BLUE}=== Ensuring Fallback Display Driver ===${NC}"
@@ -334,11 +325,7 @@ if [ -f /etc/modprobe.d/blacklist-nouveau.conf ]; then
     echo "Removing blacklist to allow nouveau as fallback..."
     rm -f /etc/modprobe.d/blacklist-nouveau.conf
     echo "Rebuilding initramfs to apply blacklist removal..."
-    if [ "$DISTRO" = "debian" ]; then
-        update-initramfs -u
-    elif [ "$DISTRO" = "arch" ]; then
-        mkinitcpio -P
-    fi
+    update-initramfs -u
 fi
 
 # Try to load nouveau
@@ -392,12 +379,7 @@ step_done
 # Verify removal
 echo -e "\n${BLUE}=== Verification ===${NC}"
 echo "Checking for remaining NVIDIA packages..."
-REMAINING=""
-if [ "$DISTRO" = "debian" ]; then
-    REMAINING=$(dpkg -l 2>/dev/null | grep nvidia | grep ^ii || true)
-elif [ "$DISTRO" = "arch" ]; then
-    REMAINING=$(pacman -Q 2>/dev/null | grep nvidia || true)
-fi
+REMAINING=$(dpkg -l 2>/dev/null | grep nvidia | grep ^ii || true)
 
 if [ -z "$REMAINING" ]; then
     echo -e "${GREEN}All NVIDIA packages removed${NC}"
@@ -436,18 +418,10 @@ echo "3. Verify nouveau is not blacklisted:"
 echo "     ls /etc/modprobe.d/blacklist-nouveau.conf"
 echo "     (if the file exists, delete it: rm /etc/modprobe.d/blacklist-nouveau.conf)"
 echo "4. Rebuild initramfs:"
-if [ "$DISTRO" = "debian" ]; then
-    echo "     update-initramfs -u"
-else
-    echo "     mkinitcpio -P"
-fi
+echo "     update-initramfs -u"
 echo "5. Reboot: reboot"
 echo "6. If still no display, install a basic X driver:"
-if [ "$DISTRO" = "debian" ]; then
-    echo "     apt install xserver-xorg-video-nouveau"
-else
-    echo "     pacman -S xf86-video-nouveau"
-fi
+echo "     apt install xserver-xorg-video-nouveau"
 echo ""
 
 # Clean up pending flag if it exists

@@ -38,12 +38,8 @@ echo ""
 # Detect distribution
 if [ -f /etc/debian_version ]; then
     DISTRO="debian"
-    PKG_MANAGER="apt"
-elif [ -f /etc/arch-release ]; then
-    DISTRO="arch"
-    PKG_MANAGER="pacman"
 else
-    echo -e "${RED}Unsupported distribution${NC}"
+    echo -e "${RED}Unsupported distribution — this toolkit supports Debian-based systems only${NC}"
     exit 1
 fi
 
@@ -224,14 +220,6 @@ check_prerequisites() {
         else
             echo -e "${GREEN}Kernel headers installed${NC}"
         fi
-    elif [ "$DISTRO" = "arch" ]; then
-        if ! pacman -Q linux-headers &> /dev/null; then
-            echo -e "${YELLOW}Installing kernel headers...${NC}"
-            pacman -S --noconfirm linux-headers
-            record_change "Installed kernel headers"
-        else
-            echo -e "${GREEN}Kernel headers installed${NC}"
-        fi
     fi
     step_done
 }
@@ -257,11 +245,7 @@ EOF
 
     # Update initramfs
     echo "Updating initramfs..."
-    if [ "$DISTRO" = "debian" ]; then
-        update-initramfs -u
-    elif [ "$DISTRO" = "arch" ]; then
-        mkinitcpio -P
-    fi
+    update-initramfs -u
     record_change "Updated initramfs (nouveau blacklist)"
     step_done
 }
@@ -293,12 +277,6 @@ remove_old_drivers() {
             if ! apt autoremove -y 2>/dev/null; then
                 echo -e "${YELLOW}autoremove failed — continuing (non-critical)${NC}"
             fi
-            record_change "Purged existing NVIDIA packages"
-        fi
-    elif [ "$DISTRO" = "arch" ]; then
-        if pacman -Q 2>/dev/null | grep -q nvidia; then
-            echo "Removing existing NVIDIA packages..."
-            pacman -R --noconfirm nvidia nvidia-utils nvidia-settings 2>/dev/null || true
             record_change "Purged existing NVIDIA packages"
         fi
     fi
@@ -367,17 +345,6 @@ install_nvidia() {
             apt install -y libnvidia-egl-wayland1 egl-wayland 2>/dev/null || true
         fi
 
-    elif [ "$DISTRO" = "arch" ]; then
-        echo "Installing NVIDIA driver..."
-        pacman -S --noconfirm nvidia nvidia-utils nvidia-settings
-
-        if [ "$SESSION_TYPE" = "wayland" ] || [ "$SESSION_TYPE" = "both" ]; then
-            echo "Installing Wayland support packages..."
-            pacman -S --noconfirm egl-wayland 2>/dev/null || true
-        fi
-
-        # Regenerate initramfs
-        mkinitcpio -P
     fi
 
     record_change "Installed NVIDIA driver packages"
@@ -694,11 +661,7 @@ blacklist intel_agp
 EOF
         echo -e "${YELLOW}Intel graphics will be disabled on next boot${NC}"
         record_change "Created /etc/modprobe.d/blacklist-intel.conf (i915 blacklist)"
-        if [ "$DISTRO" = "debian" ]; then
-            update-initramfs -u
-        elif [ "$DISTRO" = "arch" ]; then
-            mkinitcpio -P
-        fi
+        update-initramfs -u
     else
         echo "Keeping Intel graphics active"
     fi
@@ -737,11 +700,7 @@ verify_installation() {
     echo -e "\n${BLUE}=== Installation Summary ===${NC}"
 
     echo "NVIDIA packages installed:"
-    if [ "$DISTRO" = "debian" ]; then
-        dpkg -l 2>/dev/null | grep nvidia | grep ^ii || echo "  (none found — may need reboot)"
-    elif [ "$DISTRO" = "arch" ]; then
-        pacman -Q 2>/dev/null | grep nvidia || echo "  (none found — may need reboot)"
-    fi
+    dpkg -l 2>/dev/null | grep nvidia | grep ^ii || echo "  (none found — may need reboot)"
 
     echo ""
     echo "Session type: $SESSION_TYPE"

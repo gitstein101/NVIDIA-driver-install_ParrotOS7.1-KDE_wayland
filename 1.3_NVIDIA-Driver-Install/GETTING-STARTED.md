@@ -2,7 +2,7 @@
 
 ## Quick Start
 
-This project provides comprehensive tools and documentation for installing NVIDIA drivers on Linux, specifically tested on security-focused distributions like Parrot OS 7, BlackArch, and Kali Linux.
+This project provides comprehensive tools and documentation for installing NVIDIA drivers on Debian-based Linux distributions, specifically tested on security-focused distributions like Parrot OS 7 and Kali Linux.
 
 **New in v1.3**: LightDM support, automatic dpkg repair, and multi-display-manager awareness. Choose between X11, Wayland, or both sessions during installation. Dual-GPU systems (Intel + NVIDIA) are handled automatically.
 
@@ -44,8 +44,7 @@ sudo ./scripts/nvidia-remove.sh
     ├── sddm-wayland.conf.example       # SDDM Wayland config
     ├── xorg.conf.example               # X server config (with dual-GPU BusID)
     ├── grub.example                    # GRUB configuration
-    ├── blacklist-nouveau.conf          # Nouveau blacklist
-    └── mkinitcpio.conf.example         # Arch initramfs config
+    └── blacklist-nouveau.conf          # Nouveau blacklist
 ```
 
 ## What to Read First
@@ -180,8 +179,6 @@ Located in `examples/` directory:
 - **xorg.conf.example**: Copy to `/etc/X11/xorg.conf` (includes dual-GPU BusID section)
 - **blacklist-nouveau.conf**: Copy to `/etc/modprobe.d/blacklist-nouveau.conf`
 - **grub.example**: Reference for `/etc/default/grub`
-- **mkinitcpio.conf.example**: For Arch-based systems
-
 ## Quick Reference Commands
 
 ### Check If NVIDIA Is Working
@@ -261,13 +258,12 @@ systemctl stop display-manager         # Stop (for fixes)
 ## Version Information
 
 - **v1.3** — LightDM support, dpkg repair, multi-DM awareness, improved error handling
-- Based on real-world troubleshooting with NVIDIA GT 1030 on Parrot OS 7, BlackArch, and Kali Linux
+- Based on real-world troubleshooting with NVIDIA GT 1030 on Parrot OS 7 and Kali Linux
 
 Last updated: February 2026
 
 ## Additional Resources
 
-- [Arch Wiki: NVIDIA](https://wiki.archlinux.org/title/NVIDIA)
 - [Debian Wiki: NVIDIA](https://wiki.debian.org/NvidiaGraphicsDrivers)
 - [KDE Plasma Wayland](https://community.kde.org/Plasma/Wayland)
 - [NVIDIA Unix Drivers](https://www.nvidia.com/en-us/drivers/unix/)

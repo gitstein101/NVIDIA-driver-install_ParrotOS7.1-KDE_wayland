@@ -11,16 +11,11 @@ Ctrl + Alt + F7    # Alternative GUI terminal
 
 ### Emergency Driver Removal (One-Liner)
 ```bash
-# Debian/Ubuntu/Parrot/Kali
 sudo apt remove --purge '^nvidia-.*' && sudo reboot
-
-# Arch/BlackArch
-sudo pacman -R nvidia nvidia-utils && sudo reboot
 ```
 
 ## Installation Commands
 
-### Debian/Ubuntu/Parrot OS/Kali
 ```bash
 # Update system
 sudo apt update && sudo apt upgrade
@@ -34,24 +29,6 @@ sudo update-initramfs -u
 
 # Install NVIDIA driver
 sudo apt install nvidia-driver nvidia-settings
-
-# Reboot
-sudo reboot
-```
-
-### Arch/BlackArch
-```bash
-# Update system
-sudo pacman -Syu
-
-# Install kernel headers
-sudo pacman -S linux-headers
-
-# Install NVIDIA (DKMS recommended)
-sudo pacman -S nvidia-dkms nvidia-utils nvidia-settings
-
-# Update initramfs
-sudo mkinitcpio -P
 
 # Reboot
 sudo reboot
@@ -76,13 +53,8 @@ modinfo nvidia                         # Driver module info
 
 ### Package Status
 ```bash
-# Debian/Ubuntu/Parrot/Kali
 dpkg -l | grep nvidia                  # List NVIDIA packages
 apt search nvidia-driver               # Available drivers
-
-# Arch/BlackArch
-pacman -Q | grep nvidia                # List NVIDIA packages
-pacman -Ss nvidia                      # Available drivers
 ```
 
 ### System Logs
@@ -200,8 +172,7 @@ options nouveau modeset=0
 EOF
 
 # Update initramfs
-sudo update-initramfs -u  # Debian-based
-sudo mkinitcpio -P        # Arch-based
+sudo update-initramfs -u
 
 # Verify
 cat /etc/modprobe.d/blacklist-nouveau.conf
@@ -222,8 +193,7 @@ sudo nano /etc/default/grub
 # GRUB_CMDLINE_LINUX_DEFAULT="quiet splash nvidia-drm.modeset=1"
 
 # Update GRUB
-sudo update-grub          # Debian-based
-sudo grub-mkconfig -o /boot/grub/grub.cfg  # Arch-based
+sudo update-grub
 ```
 
 ### Display Manager Control
@@ -250,21 +220,12 @@ sudo systemctl start lightdm
 
 ### Complete NVIDIA Removal
 ```bash
-# Debian/Ubuntu/Parrot/Kali
 sudo systemctl stop display-manager
 sudo apt remove --purge '^nvidia-.*' '^libnvidia-.*'
 sudo apt autoremove
 sudo rm -f /etc/X11/xorg.conf
 sudo rm -f /etc/X11/xorg.conf.d/*nvidia*
 sudo update-initramfs -u
-sudo reboot
-
-# Arch/BlackArch
-sudo systemctl stop display-manager
-sudo pacman -R nvidia nvidia-utils nvidia-settings nvidia-dkms
-sudo rm -f /etc/X11/xorg.conf
-sudo rm -f /etc/X11/xorg.conf.d/*nvidia*
-sudo mkinitcpio -P
 sudo reboot
 ```
 
@@ -312,7 +273,6 @@ vblank_mode=0 glxgears               # Uncapped FPS test
 /etc/default/grub                      # GRUB configuration
 /etc/environment                       # Wayland env vars (GBM_BACKEND etc.)
 /etc/sddm.conf.d/10-wayland.conf      # SDDM Wayland config
-/etc/mkinitcpio.conf                   # Arch initramfs config
 ```
 
 ### Log Files
@@ -423,7 +383,7 @@ echo "=== Quick Diagnostic ===" && lspci | grep VGA && echo && lsmod | grep -E "
 | Nouveau conflict | `sudo rmmod nouveau && sudo modprobe nvidia` |
 | Missing nvidia-smi | `sudo apt install nvidia-utils` |
 | X won't start | `sudo nvidia-xconfig && sudo systemctl restart display-manager` |
-| After kernel update | `sudo apt install linux-headers-$(uname -r)` (Debian) or `sudo mkinitcpio -P` (Arch) |
+| After kernel update | `sudo apt install linux-headers-$(uname -r)` |
 | Wayland env vars missing | Check `/etc/environment` for GBM_BACKEND and __GLX_VENDOR_LIBRARY_NAME |
 | Wrong GPU on dual-GPU | Check xorg.conf BusID (X11) or blacklist i915 (Wayland) |
 
@@ -446,7 +406,7 @@ watch -n 1 nvidia-smi
 ---
 
 **Pro Tips**:
-- Always `sudo update-initramfs -u` (Debian) or `sudo mkinitcpio -P` (Arch) after config changes
+- Always `sudo update-initramfs -u` after config changes
 - Test with `sudo systemctl restart display-manager` before rebooting
 - Keep a live USB handy
 - `nvidia-drm.modeset=1` is required for Wayland — always set it

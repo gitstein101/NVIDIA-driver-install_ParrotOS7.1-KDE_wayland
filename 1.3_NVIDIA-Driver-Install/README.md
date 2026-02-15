@@ -17,7 +17,6 @@ Comprehensive toolkit for installing and troubleshooting NVIDIA drivers on Linux
 
 ## Supported Distributions
 - Parrot OS 7 (Debian 12 base, KDE Plasma, SDDM)
-- BlackArch Linux (Arch-based, rolling release)
 - Kali Linux (Debian Testing base)
 - Standard Debian/Ubuntu derivatives
 
@@ -41,8 +40,7 @@ Comprehensive toolkit for installing and troubleshooting NVIDIA drivers on Linux
     ├── sddm-wayland.conf.example       # SDDM Wayland session config
     ├── xorg.conf.example               # X server config (with dual-GPU BusID)
     ├── grub.example                    # GRUB configuration
-    ├── blacklist-nouveau.conf          # Nouveau blacklist
-    └── mkinitcpio.conf.example         # Arch initramfs config
+    └── blacklist-nouveau.conf          # Nouveau blacklist
 ```
 
 ## Quick Start
@@ -83,14 +81,6 @@ sudo ./scripts/nvidia-install.sh
 sudo apt update && sudo apt upgrade
 sudo apt remove --purge '^nvidia-.*'
 sudo apt install nvidia-driver nvidia-settings
-sudo reboot
-```
-
-**Arch/BlackArch**:
-```bash
-sudo pacman -Syu
-sudo pacman -S nvidia-dkms nvidia-utils nvidia-settings
-sudo mkinitcpio -P
 sudo reboot
 ```
 
@@ -222,11 +212,10 @@ exit && sudo reboot
 
 ## Resources
 
-- [Arch Wiki: NVIDIA](https://wiki.archlinux.org/title/NVIDIA)
 - [Debian Wiki: NVIDIA](https://wiki.debian.org/NvidiaGraphicsDrivers)
 - [NVIDIA Unix Drivers](https://www.nvidia.com/en-us/drivers/unix/)
 - [KDE Plasma Wayland](https://community.kde.org/Plasma/Wayland)
 
 ---
 
-**Note**: This toolkit is based on practical experience with NVIDIA GT 1030 on Parrot OS 7, BlackArch Linux, and related distributions. Your specific hardware and software configuration may require adjustments.
+**Note**: This toolkit is based on practical experience with NVIDIA GT 1030 on Parrot OS 7, Kali Linux, and related Debian-based distributions. Your specific hardware and software configuration may require adjustments.

@@ -8,7 +8,7 @@ Starting with driver version 495+, NVIDIA provides first-class Wayland support v
 
 - **NVIDIA driver**: Version 495 or newer (525+ recommended)
 - **Kernel parameter**: `nvidia-drm.modeset=1` (mandatory)
-- **EGL Wayland library**: `libnvidia-egl-wayland1` (Debian) or `egl-wayland` (Arch)
+- **EGL Wayland library**: `libnvidia-egl-wayland1`
 - **Compositor**: KDE Plasma 5.25+ / GNOME 41+ / Sway 1.8+
 
 ## Required Environment Variables
@@ -77,8 +77,7 @@ GRUB_CMDLINE_LINUX_DEFAULT="quiet splash nvidia-drm.modeset=1"
 Then update GRUB:
 
 ```bash
-sudo update-grub          # Debian-based
-sudo grub-mkconfig -o /boot/grub/grub.cfg  # Arch-based
+sudo update-grub
 ```
 
 ## Dual-GPU Systems on Wayland
@@ -221,8 +220,7 @@ echo $GBM_BACKEND
 echo $__GLX_VENDOR_LIBRARY_NAME
 
 # 4. EGL-Wayland library installed
-dpkg -l | grep egl-wayland   # Debian
-pacman -Q egl-wayland        # Arch
+dpkg -l | grep egl-wayland
 
 # 5. Wayland session active
 echo $XDG_SESSION_TYPE

@@ -8,8 +8,6 @@
 3. Remove driver:
    ```bash
    sudo apt remove --purge nvidia-*
-   # OR
-   sudo pacman -R nvidia nvidia-utils
    ```
 4. Reboot: `sudo reboot`
 
@@ -72,8 +70,7 @@ grep nvidia-drm /etc/default/grub
 grep -E "GBM_BACKEND|__GLX_VENDOR" /etc/environment
 
 # 3. Ensure EGL-Wayland library is installed
-dpkg -l | grep egl-wayland   # Debian
-pacman -Q egl-wayland        # Arch
+dpkg -l | grep egl-wayland
 
 # 4. Fall back to X11 session temporarily
 # Edit /etc/sddm.conf.d/10-wayland.conf and set DisplayServer=x11
@@ -121,8 +118,7 @@ blacklist nouveau
 options nouveau modeset=0
 
 # Update initramfs
-sudo update-initramfs -u  # Debian/Ubuntu
-sudo mkinitcpio -P        # Arch
+sudo update-initramfs -u
 
 # Reboot
 sudo reboot
@@ -143,11 +139,7 @@ sudo modprobe nvidia
 ### Issue: nvidia-smi: command not found
 **Cause**: nvidia-utils not installed
 ```bash
-# Debian/Ubuntu
 sudo apt install nvidia-utils
-
-# Arch
-sudo pacman -S nvidia-utils
 ```
 
 ### Issue: Display manager won't start
@@ -175,11 +167,7 @@ sudo update-grub
 **Symptom**: Works until kernel updates, then breaks
 **Solution**: Use DKMS
 ```bash
-# Debian/Ubuntu
 sudo apt install nvidia-dkms
-
-# Arch
-sudo pacman -S nvidia-dkms
 ```
 
 ### Issue: Performance issues / Screen tearing (X11)
@@ -219,14 +207,6 @@ echo "WLR_NO_HARDWARE_CURSORS=1" | sudo tee -a /etc/environment
 # Recommended method
 sudo apt update
 sudo apt install nvidia-driver nvidia-settings
-sudo reboot
-```
-
-### BlackArch Linux
-```bash
-# Install with DKMS for rolling release
-sudo pacman -S nvidia-dkms nvidia-utils nvidia-settings
-sudo mkinitcpio -P
 sudo reboot
 ```
 
@@ -387,7 +367,6 @@ sudo reboot
 - **Check logs** before asking for help
 - **Document what works** for your specific setup
 - **Keep kernel headers updated**
-- **DKMS is your friend** on rolling release
 - **nvidia-drm.modeset=1** is required for Wayland
 
 ---
