@@ -12,6 +12,9 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Script directory (for finding failure logs)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
 # Output files
 DIAG_TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 OUTPUT_FILE="nvidia-diagnostic-${DIAG_TIMESTAMP}.log"
@@ -604,6 +607,49 @@ print_header "Common Issues Analysis"
     fi
 } | tee -a "$OUTPUT_FILE"
 
+# 17. Recent Failure Logs
+print_header "Recent Failure Logs"
+{
+    # Scan for failure logs in script directory and /tmp (last 7 days)
+    _failure_logs=()
+    for search_dir in "$SCRIPT_DIR" /tmp; do
+        while IFS= read -r -d '' logfile; do
+            _failure_logs+=("$logfile")
+        done < <(find "$search_dir" -maxdepth 1 -name "nvidia-failure-*.log" -mtime -7 -print0 2>/dev/null || true)
+    done
+
+    if [ ${#_failure_logs[@]} -eq 0 ]; then
+        echo "No recent failure logs found (last 7 days)"
+        echo -e "${GREEN}Clean — no recorded failures${NC}"
+    else
+        echo "Found ${#_failure_logs[@]} failure log(s) from the last 7 days:"
+        echo ""
+
+        # Sort by modification time (newest first)
+        IFS=$'\n' _sorted_logs=($(ls -t "${_failure_logs[@]}" 2>/dev/null)); unset IFS
+
+        for logfile in "${_sorted_logs[@]}"; do
+            # Parse header fields
+            _fl_timestamp=$(grep "^TIMESTAMP=" "$logfile" 2>/dev/null | cut -d= -f2- || echo "unknown")
+            _fl_script=$(grep "^SCRIPT=" "$logfile" 2>/dev/null | cut -d= -f2- || echo "unknown")
+            _fl_step=$(grep "^FAILED_STEP=" "$logfile" 2>/dev/null | cut -d= -f2- || echo "unknown")
+            _fl_exit=$(grep "^EXIT_CODE=" "$logfile" 2>/dev/null | cut -d= -f2- || echo "unknown")
+
+            echo "  $(basename "$logfile")"
+            echo "    Timestamp: ${_fl_timestamp}"
+            echo "    Script:    ${_fl_script}"
+            echo "    Failed at: ${_fl_step}"
+            echo "    Exit code: ${_fl_exit}"
+            echo ""
+        done
+
+        # Show full content of most recent failure log
+        _newest="${_sorted_logs[0]}"
+        echo "=== Most Recent Failure Log: $(basename "$_newest") ==="
+        cat "$_newest"
+    fi
+} | tee -a "$OUTPUT_FILE"
+
 # Summary
 print_header "Diagnostic Summary"
 {
@@ -744,6 +790,36 @@ echo -e "\n${BLUE}Generating JSON report: $JSON_FILE${NC}"
         add_issue "NVreg_PreserveVideoMemoryAllocations not set (suspend/resume will fail)"
     fi
 
+    # Collect recent failure logs for JSON
+    _recent_failures_json=""
+    _recent_failure_count=0
+    _json_failure_logs=()
+    for _jsd in "$SCRIPT_DIR" /tmp; do
+        while IFS= read -r -d '' _jlf; do
+            _json_failure_logs+=("$_jlf")
+        done < <(find "$_jsd" -maxdepth 1 -name "nvidia-failure-*.log" -mtime -7 -print0 2>/dev/null || true)
+    done
+
+    for _jlf in "${_json_failure_logs[@]}"; do
+        _jf_file=$(basename "$_jlf")
+        _jf_ts=$(grep "^TIMESTAMP=" "$_jlf" 2>/dev/null | cut -d= -f2- || echo "")
+        _jf_script=$(grep "^SCRIPT=" "$_jlf" 2>/dev/null | cut -d= -f2- || echo "")
+        _jf_step=$(grep "^FAILED_STEP=" "$_jlf" 2>/dev/null | cut -d= -f2- || echo "")
+        _jf_exit=$(grep "^EXIT_CODE=" "$_jlf" 2>/dev/null | cut -d= -f2- || echo "")
+        _jf_cmd=$(grep "^FAILED_COMMAND=" "$_jlf" 2>/dev/null | cut -d= -f2- || echo "")
+        # Escape for JSON
+        _jf_step_esc=$(printf '%s' "$_jf_step" | sed 's/\\/\\\\/g; s/"/\\"/g')
+        _jf_cmd_esc=$(printf '%s' "$_jf_cmd" | sed 's/\\/\\\\/g; s/"/\\"/g')
+
+        _entry="{ \"file\": \"${_jf_file}\", \"timestamp\": \"${_jf_ts}\", \"script\": \"${_jf_script}\", \"failed_step\": \"${_jf_step_esc}\", \"exit_code\": ${_jf_exit:-0}, \"failed_command\": \"${_jf_cmd_esc}\" }"
+        if [ -n "$_recent_failures_json" ]; then
+            _recent_failures_json="${_recent_failures_json}, ${_entry}"
+        else
+            _recent_failures_json="${_entry}"
+        fi
+        _recent_failure_count=$((_recent_failure_count + 1))
+    done
+
     # Write JSON
     cat << ENDJSON
 {
@@ -782,7 +858,11 @@ echo -e "\n${BLUE}Generating JSON report: $JSON_FILE${NC}"
     "preserve_video_memory": ${_preserve_mem}
   },
   "issues_found": ${_issues},
-  "issues": [${_issues_json}]
+  "issues": [${_issues_json}],
+  "recent_failures": {
+    "count": ${_recent_failure_count},
+    "logs": [${_recent_failures_json}]
+  }
 }
 ENDJSON
 } > "$JSON_FILE"

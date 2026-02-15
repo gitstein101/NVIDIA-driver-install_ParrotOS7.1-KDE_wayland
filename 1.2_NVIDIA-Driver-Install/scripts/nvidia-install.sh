@@ -5,6 +5,12 @@
 
 set -euo pipefail
 
+# Load error handler
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "${SCRIPT_DIR}/error-handler.sh"
+init_failure_logging "install" 13
+activate_traps
+
 # Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -46,6 +52,7 @@ echo ""
 
 # Function to detect GPU
 detect_gpu() {
+    set_step 1 "Detecting GPU hardware"
     echo -e "${BLUE}=== Detecting GPU ===${NC}"
     GPU_INFO=$(lspci | grep -i "vga\|3d" || true)
     echo "$GPU_INFO"
@@ -61,10 +68,12 @@ detect_gpu() {
             exit 1
         fi
     fi
+    step_done
 }
 
 # Function to detect dual-GPU setup
 detect_dual_gpu() {
+    set_step 2 "Checking for dual-GPU configuration"
     echo -e "\n${BLUE}=== Checking for Dual-GPU Configuration ===${NC}"
 
     VGA_COUNT=$(lspci | grep -ci "vga\|3d" || true)
@@ -91,10 +100,12 @@ detect_dual_gpu() {
         DUAL_GPU=false
         echo -e "${GREEN}Single GPU configuration — no dual-GPU setup needed${NC}"
     fi
+    step_done
 }
 
 # Function to prompt for session type
 detect_session_type() {
+    set_step 3 "Selecting display session type"
     echo -e "\n${BLUE}=== Display Session Type ===${NC}"
     echo ""
     echo "Which display session do you want to configure?"
@@ -115,10 +126,12 @@ detect_session_type() {
     done
 
     echo -e "${GREEN}Session type: $SESSION_TYPE${NC}"
+    step_done
 }
 
 # Function to create backup
 create_backup() {
+    set_step 4 "Creating configuration backup"
     echo -e "\n${BLUE}=== Creating Backup ===${NC}"
     BACKUP_DIR="/root/nvidia-backup-$(date +%Y%m%d-%H%M%S)"
     mkdir -p "$BACKUP_DIR"
@@ -134,10 +147,13 @@ create_backup() {
 
     echo "Backup created at: $BACKUP_DIR"
     echo "$BACKUP_DIR" > /tmp/nvidia-backup-location
+    record_change "Created backup at ${BACKUP_DIR}"
+    step_done
 }
 
 # Function to check prerequisites
 check_prerequisites() {
+    set_step 5 "Installing prerequisites"
     echo -e "\n${BLUE}=== Checking Prerequisites ===${NC}"
 
     # Check kernel headers
@@ -145,6 +161,7 @@ check_prerequisites() {
         if ! dpkg -l 2>/dev/null | grep -q "linux-headers-$(uname -r)"; then
             echo -e "${YELLOW}Installing kernel headers...${NC}"
             apt install -y "linux-headers-$(uname -r)"
+            record_change "Installed kernel headers for $(uname -r)"
         else
             echo -e "${GREEN}Kernel headers installed${NC}"
         fi
@@ -152,14 +169,17 @@ check_prerequisites() {
         if ! pacman -Q linux-headers &> /dev/null; then
             echo -e "${YELLOW}Installing kernel headers...${NC}"
             pacman -S --noconfirm linux-headers
+            record_change "Installed kernel headers"
         else
             echo -e "${GREEN}Kernel headers installed${NC}"
         fi
     fi
+    step_done
 }
 
 # Function to blacklist nouveau
 blacklist_nouveau() {
+    set_step 6 "Blacklisting nouveau driver"
     echo -e "\n${BLUE}=== Blacklisting Nouveau Driver ===${NC}"
 
     BLACKLIST_FILE="/etc/modprobe.d/blacklist-nouveau.conf"
@@ -173,6 +193,7 @@ blacklist nouveau
 options nouveau modeset=0
 EOF
         echo -e "${GREEN}Nouveau blacklisted${NC}"
+        record_change "Created /etc/modprobe.d/blacklist-nouveau.conf"
     fi
 
     # Update initramfs
@@ -182,10 +203,13 @@ EOF
     elif [ "$DISTRO" = "arch" ]; then
         mkinitcpio -P
     fi
+    record_change "Updated initramfs (nouveau blacklist)"
+    step_done
 }
 
 # Function to remove old drivers
 remove_old_drivers() {
+    set_step 7 "Removing old NVIDIA drivers"
     echo -e "\n${BLUE}=== Removing Old Drivers ===${NC}"
 
     if [ "$DISTRO" = "debian" ]; then
@@ -193,11 +217,13 @@ remove_old_drivers() {
             echo "Removing existing NVIDIA packages..."
             apt remove --purge -y '^nvidia-.*' '^libnvidia-.*' || true
             apt autoremove -y
+            record_change "Purged existing NVIDIA packages"
         fi
     elif [ "$DISTRO" = "arch" ]; then
         if pacman -Q 2>/dev/null | grep -q nvidia; then
             echo "Removing existing NVIDIA packages..."
             pacman -R --noconfirm nvidia nvidia-utils nvidia-settings 2>/dev/null || true
+            record_change "Purged existing NVIDIA packages"
         fi
     fi
 
@@ -206,10 +232,12 @@ remove_old_drivers() {
         echo -e "${YELLOW}Nouveau is currently loaded${NC}"
         rmmod nouveau 2>/dev/null || echo "Cannot unload nouveau (will be removed on reboot)"
     fi
+    step_done
 }
 
 # Function to install NVIDIA driver
 install_nvidia() {
+    set_step 8 "Installing NVIDIA driver packages"
     echo -e "\n${BLUE}=== Installing NVIDIA Driver ===${NC}"
 
     if [ "$DISTRO" = "debian" ]; then
@@ -252,15 +280,19 @@ install_nvidia() {
         mkinitcpio -P
     fi
 
+    record_change "Installed NVIDIA driver packages"
     echo -e "${GREEN}NVIDIA driver installed${NC}"
+    step_done
 }
 
 # Function to configure X server
 configure_xserver() {
+    set_step 9 "Configuring X server"
     echo -e "\n${BLUE}=== Configuring X Server ===${NC}"
 
     if [ "$SESSION_TYPE" = "wayland" ]; then
         echo "Wayland-only session selected — skipping X server configuration"
+        step_done
         return
     fi
 
@@ -270,6 +302,7 @@ configure_xserver() {
         if command -v nvidia-xconfig &> /dev/null; then
             nvidia-xconfig
             echo -e "${GREEN}xorg.conf generated${NC}"
+            record_change "Generated /etc/X11/xorg.conf via nvidia-xconfig"
         else
             echo -e "${YELLOW}nvidia-xconfig not found, creating basic config manually...${NC}"
             mkdir -p /etc/X11/xorg.conf.d
@@ -281,18 +314,22 @@ Section "Device"
 EndSection
 EOF
             echo -e "${GREEN}Basic NVIDIA X config created in /etc/X11/xorg.conf.d/20-nvidia.conf${NC}"
+            record_change "Created /etc/X11/xorg.conf.d/20-nvidia.conf"
         fi
     else
         echo "Skipping xorg.conf generation"
     fi
+    step_done
 }
 
 # Function to configure Wayland session
 configure_wayland() {
+    set_step 10 "Configuring Wayland session"
     echo -e "\n${BLUE}=== Configuring Wayland Session ===${NC}"
 
     if [ "$SESSION_TYPE" = "x11" ]; then
         echo "X11-only session selected — skipping Wayland configuration"
+        step_done
         return
     fi
 
@@ -314,6 +351,7 @@ configure_wayland() {
         fi
     done
 
+    record_change "Set NVIDIA Wayland environment variables in /etc/environment"
     echo -e "${GREEN}Environment variables set in $ENV_FILE:${NC}"
     echo "  GBM_BACKEND=nvidia-drm"
     echo "  __GLX_VENDOR_LIBRARY_NAME=nvidia"
@@ -338,6 +376,7 @@ GreeterEnvironment=QT_WAYLAND_SHELL_INTEGRATION=layer-shell
 CompositorCommand=kwin_wayland --drm --no-lockscreen --no-global-shortcuts --locale1
 EOF
             echo -e "${GREEN}SDDM configured for Wayland session${NC}"
+            record_change "Created /etc/sddm.conf.d/10-wayland.conf (Wayland-only)"
         else
             # Both: keep X11 greeter but ensure Wayland sessions are available
             cat > /etc/sddm.conf.d/10-wayland.conf << 'EOF'
@@ -349,6 +388,7 @@ EOF
 DisplayServer=x11
 EOF
             echo -e "${GREEN}SDDM configured — Wayland sessions available at login screen${NC}"
+            record_change "Created /etc/sddm.conf.d/10-wayland.conf (dual-session)"
         fi
     fi
 
@@ -367,11 +407,14 @@ EOF
             fi
         fi
     fi
+    step_done
 }
 
 # Function to configure dual-GPU setup
 configure_dual_gpu() {
+    set_step 11 "Configuring dual-GPU routing"
     if [ "$DUAL_GPU" = false ]; then
+        step_done
         return
     fi
 
@@ -434,6 +477,7 @@ Section "Screen"
 EndSection
 EOF
         echo -e "${GREEN}Created /etc/X11/xorg.conf with NVIDIA BusID${NC}"
+        record_change "Created /etc/X11/xorg.conf with NVIDIA BusID ${BUSID_DEC}"
 
         # Create xrandr provider setup script and systemd service
         echo "Creating display provider setup service..."
@@ -462,6 +506,7 @@ EOF
         systemctl daemon-reload
         systemctl enable nvidia-primary.service
         echo -e "${GREEN}Created nvidia-primary startup service${NC}"
+        record_change "Created nvidia-primary.service and /usr/local/bin/nvidia-primary.sh"
     fi
 
     # Wayland path: no xorg.conf needed, DRM/kernel handles GPU selection
@@ -489,6 +534,7 @@ blacklist i915
 blacklist intel_agp
 EOF
         echo -e "${YELLOW}Intel graphics will be disabled on next boot${NC}"
+        record_change "Created /etc/modprobe.d/blacklist-intel.conf (i915 blacklist)"
         if [ "$DISTRO" = "debian" ]; then
             update-initramfs -u
         elif [ "$DISTRO" = "arch" ]; then
@@ -497,10 +543,12 @@ EOF
     else
         echo "Keeping Intel graphics active"
     fi
+    step_done
 }
 
 # Function to add GRUB parameters
 configure_grub() {
+    set_step 12 "Configuring GRUB parameters"
     echo -e "\n${BLUE}=== Configuring GRUB ===${NC}"
 
     GRUB_FILE="/etc/default/grub"
@@ -514,11 +562,14 @@ configure_grub() {
         sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="/GRUB_CMDLINE_LINUX_DEFAULT="nvidia-drm.modeset=1 /' "$GRUB_FILE"
         update-grub 2>/dev/null || grub-mkconfig -o /boot/grub/grub.cfg
         echo -e "${GREEN}GRUB configured${NC}"
+        record_change "Added nvidia-drm.modeset=1 to GRUB and ran update-grub"
     fi
+    step_done
 }
 
 # Function to verify installation
 verify_installation() {
+    set_step 13 "Verifying installation"
     echo -e "\n${BLUE}=== Installation Summary ===${NC}"
 
     echo "NVIDIA packages installed:"
@@ -552,6 +603,7 @@ verify_installation() {
     if [ "$DUAL_GPU" = true ]; then
         [ -f /etc/systemd/system/nvidia-primary.service ] && echo "  - nvidia-primary.service enabled"
     fi
+    step_done
 }
 
 # Main installation flow
