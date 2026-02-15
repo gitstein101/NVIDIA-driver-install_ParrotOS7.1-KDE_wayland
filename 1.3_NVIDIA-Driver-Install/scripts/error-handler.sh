@@ -1,8 +1,13 @@
 #!/bin/bash
 
-# error-handler.sh — Shared failure logging library for NVIDIA toolkit v1.2
+# error-handler.sh — Shared failure logging library for NVIDIA toolkit v1.3
 # Source this file from nvidia-install.sh and nvidia-remove.sh
 # Provides: step tracking, ERR/EXIT trap handlers, change recording, failure log generation
+#
+# NOTE: The calling script should use `set -euo pipefail`. This handler does NOT
+# set -E (errtrace) because it would cause ERR traps to fire inside `|| true`
+# guards. Instead, we capture what we can from the ERR trap and fall back to
+# step-level context when line-level context is unavailable.
 
 # Guard against double-sourcing
 if [ "${_ERROR_HANDLER_LOADED:-}" = "true" ]; then
@@ -94,6 +99,7 @@ _on_error() {
     _ERR_FUNC="$2"
     _ERR_CMD="$3"
     _ERR_CODE="$4"
+    _ERR_SOURCE="${BASH_SOURCE[1]:-unknown}"
 }
 
 # _on_exit EXIT_CODE
@@ -114,12 +120,19 @@ _on_exit() {
         return 0
     fi
 
-    # Use ERR-captured context if available, otherwise derive from exit code
+    # Use ERR-captured context if available, otherwise derive from step context
     local failed_line="${_ERR_LINE:-unknown}"
     local failed_func="${_ERR_FUNC:-unknown}"
     local failed_cmd="${_ERR_CMD:-unknown}"
+    local failed_source="${_ERR_SOURCE:-unknown}"
 
-    _write_failure_log "$exit_code" "$failed_line" "$failed_func" "$failed_cmd"
+    # If ERR trap didn't fire (e.g., || true suppressed it), enrich with step info
+    if [ "$failed_cmd" = "unknown" ] && [ -n "$_CURRENT_STEP_DESC" ]; then
+        failed_cmd="(ERR trap suppressed — failed during step ${_CURRENT_STEP_NUM}: ${_CURRENT_STEP_DESC})"
+        failed_func="${_CALLING_SCRIPT}:step${_CURRENT_STEP_NUM}"
+    fi
+
+    _write_failure_log "$exit_code" "$failed_line" "$failed_func" "$failed_cmd" "$failed_source"
     _print_terminal_summary "$exit_code"
 }
 
@@ -130,6 +143,7 @@ _write_failure_log() {
     local failed_line="$2"
     local failed_func="$3"
     local failed_cmd="$4"
+    local failed_source="${5:-unknown}"
 
     local timestamp
     timestamp=$(date -Iseconds)
@@ -145,13 +159,14 @@ _write_failure_log() {
 
     # --- Machine-parseable header ---
     {
-        echo "NVIDIA_FAILURE_LOG_VERSION=1"
+        echo "NVIDIA_FAILURE_LOG_VERSION=2"
         echo "TIMESTAMP=${timestamp}"
         echo "SCRIPT=${_CALLING_SCRIPT}"
         echo "EXIT_CODE=${exit_code}"
         echo "FAILED_LINE=${failed_line}"
         echo "FAILED_FUNCTION=${failed_func}"
         echo "FAILED_COMMAND=${failed_cmd}"
+        echo "FAILED_SOURCE=${failed_source}"
         echo "FAILED_STEP_NUM=${_CURRENT_STEP_NUM}"
         echo "FAILED_STEP=${_CURRENT_STEP_DESC}"
         echo "TOTAL_STEPS=${_TOTAL_STEPS}"
@@ -206,6 +221,12 @@ _write_failure_log() {
             dpkg -l 2>/dev/null | grep -i nvidia | grep ^ii || echo "  (none)"
         elif command -v pacman &> /dev/null; then
             pacman -Q 2>/dev/null | grep -i nvidia || echo "  (none)"
+        fi
+        echo ""
+
+        echo "--- Broken/half-installed packages ---"
+        if command -v dpkg &> /dev/null; then
+            dpkg -l 2>/dev/null | awk '/^.[HUFWt]/' || echo "  (none)"
         fi
         echo ""
 

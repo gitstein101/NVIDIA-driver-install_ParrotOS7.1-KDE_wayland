@@ -30,7 +30,13 @@
       "Bash(git -C /mnt/bigdrv/LABS322/ClaudeCODE/NVIDIA-driver-install_ParrotOS7.1-KDE_wayland branch -d harden-v1.2-scripts)",
       "Bash(git -C /mnt/bigdrv/LABS322/ClaudeCODE/NVIDIA-driver-install_ParrotOS7.1-KDE_wayland status)",
       "Bash(git -C /mnt/bigdrv/LABS322/ClaudeCODE/NVIDIA-driver-install_ParrotOS7.1-KDE_wayland diff .claude/settings.local.json)",
-      "Bash(git -C /mnt/bigdrv/LABS322/ClaudeCODE/NVIDIA-driver-install_ParrotOS7.1-KDE_wayland log --oneline -3)"
+      "Bash(git -C /mnt/bigdrv/LABS322/ClaudeCODE/NVIDIA-driver-install_ParrotOS7.1-KDE_wayland log --oneline -3)",
+      "Bash(shellcheck:*)",
+      "Bash(git checkout:*)",
+      "Bash(git cherry-pick:*)",
+      "Bash(gh pr merge:*)",
+      "Bash(git pull:*)",
+      "Bash(bash --version)"
     ]
   }
 }

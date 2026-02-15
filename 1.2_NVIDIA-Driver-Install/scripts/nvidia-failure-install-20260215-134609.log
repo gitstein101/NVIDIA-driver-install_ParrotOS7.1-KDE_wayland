@@ -1,0 +1,90 @@
+NVIDIA_FAILURE_LOG_VERSION=1
+TIMESTAMP=2026-02-15T13:46:09+01:00
+SCRIPT=nvidia-install.sh
+EXIT_CODE=100
+FAILED_LINE=unknown
+FAILED_FUNCTION=unknown
+FAILED_COMMAND=unknown
+FAILED_STEP_NUM=5
+FAILED_STEP=Installing prerequisites
+TOTAL_STEPS=13
+DISTRO=debian
+KERNEL=6.17.13+2-amd64
+HOSTNAME=parrot
+---
+
+=== STEPS COMPLETED ===
+  [OK] 1: Detecting GPU hardware
+  [OK] 2: Checking for dual-GPU configuration
+  [OK] 3: Selecting display session type
+  [OK] 4: Creating configuration backup
+  [FAILED] 5: Installing prerequisites
+
+=== CHANGES MADE (may need rollback) ===
+  - Created backup at /root/nvidia-backup-20260215-134548
+  - Repaired broken dpkg packages: libc-bin
+nvidia-alternative
+xserver-xorg-video-nvidia
+
+=== SYSTEM STATE AT FAILURE ===
+
+--- Loaded NVIDIA/nouveau modules ---
+  (none)
+
+--- Installed NVIDIA packages ---
+ii  firmware-nvidia-graphics                            20250410-2                           all          Binary firmware for Nvidia GPU chips
+ii  firmware-nvidia-gsp                                 550.163.01-4parrot1                  amd64        NVIDIA GSP firmware
+ii  glx-alternative-nvidia                              1.2.2                                amd64        allows the selection of NVIDIA as GLX provider
+ii  libegl-nvidia0:amd64                                550.163.01-4parrot1                  amd64        NVIDIA binary EGL library
+ii  libgl1-nvidia-glvnd-glx:amd64                       550.163.01-4parrot1                  amd64        NVIDIA binary OpenGL/GLX library (GLVND variant)
+ii  libgles-nvidia1:amd64                               550.163.01-4parrot1                  amd64        NVIDIA binary OpenGL|ES 1.x library
+ii  libgles-nvidia2:amd64                               550.163.01-4parrot1                  amd64        NVIDIA binary OpenGL|ES 2.x library
+ii  libglx-nvidia0:amd64                                550.163.01-4parrot1                  amd64        NVIDIA binary GLX library
+ii  libnvidia-allocator1:amd64                          550.163.01-4parrot1                  amd64        NVIDIA allocator runtime library
+ii  libnvidia-cfg1:amd64                                550.163.01-4parrot1                  amd64        NVIDIA binary OpenGL/GLX configuration library
+ii  libnvidia-egl-gbm1:amd64                            1.1.2.1-1                            amd64        GBM EGL external platform library for NVIDIA
+ii  libnvidia-egl-wayland1:amd64                        1:1.1.18-1                           amd64        Wayland EGL External Platform library -- shared library
+ii  libnvidia-eglcore:amd64                             550.163.01-4parrot1                  amd64        NVIDIA binary EGL core libraries
+ii  libnvidia-glcore:amd64                              550.163.01-4parrot1                  amd64        NVIDIA binary OpenGL/GLX core libraries
+ii  libnvidia-glvkspirv:amd64                           550.163.01-4parrot1                  amd64        NVIDIA binary Vulkan Spir-V compiler library
+ii  libnvidia-gpucomp:amd64                             550.163.01-4parrot1                  amd64        NVIDIA binary GPU compiler library
+ii  libnvidia-ml1:amd64                                 550.163.01-4parrot1                  amd64        NVIDIA Management Library (NVML) runtime library
+ii  libnvidia-pkcs11-openssl3:amd64                     550.163.01-4parrot1                  amd64        NVIDIA PKCS #11 Library (OpenSSL 3)
+ii  libnvidia-ptxjitcompiler1:amd64                     550.163.01-4parrot1                  amd64        NVIDIA PTX JIT Compiler library
+ii  libnvidia-rtcore:amd64                              550.163.01-4parrot1                  amd64        NVIDIA binary Vulkan ray tracing (rtcore) library
+ii  nvidia-driver-bin                                   550.163.01-4parrot1                  amd64        NVIDIA driver support binaries
+ii  nvidia-driver-libs:amd64                            550.163.01-4parrot1                  amd64        NVIDIA metapackage (OpenGL/GLX/EGL/GLES libraries)
+ii  nvidia-egl-common                                   550.163.01-4parrot1                  amd64        NVIDIA binary EGL driver - common files
+ii  nvidia-egl-icd:amd64                                550.163.01-4parrot1                  amd64        NVIDIA EGL installable client driver (ICD)
+ii  nvidia-installer-cleanup                            20240109+1                           amd64        cleanup after driver installation with the nvidia-installer
+ii  nvidia-kernel-common                                20240109+1                           amd64        NVIDIA binary kernel module support files
+ii  nvidia-legacy-check                                 550.163.01-4parrot1                  amd64        check for NVIDIA GPUs requiring a legacy driver
+ii  nvidia-modprobe                                     570.133.07-1                         amd64        utility to load NVIDIA kernel modules and create device nodes
+ii  nvidia-persistenced                                 550.163.01-1                         amd64        daemon to maintain persistent software state in the NVIDIA driver
+ii  nvidia-settings                                     550.163.01-1                         amd64        tool for configuring the NVIDIA graphics driver
+ii  nvidia-smi                                          550.163.01-4parrot1                  amd64        NVIDIA System Management Interface
+ii  nvidia-support                                      20240109+1                           amd64        NVIDIA binary graphics driver support files
+ii  nvidia-suspend-common                               550.163.01-4parrot1                  amd64        NVIDIA driver - systemd power management scripts
+ii  nvidia-vdpau-driver:amd64                           550.163.01-4parrot1                  amd64        Video Decode and Presentation API for Unix - NVIDIA driver
+ii  nvidia-vulkan-common                                550.163.01-4parrot1                  amd64        NVIDIA Vulkan driver - common files
+ii  nvidia-vulkan-icd:amd64                             550.163.01-4parrot1                  amd64        NVIDIA Vulkan installable client driver (ICD)
+
+--- Display manager status ---
+inactive
+  not running
+
+--- Key config files ---
+  [EXISTS] /etc/modprobe.d/blacklist-nouveau.conf
+  [EXISTS] /etc/modprobe.d/blacklist-intel.conf
+  [EXISTS] /etc/X11/xorg.conf
+  [ABSENT] /etc/sddm.conf.d/10-wayland.conf
+  [EXISTS] /etc/environment
+
+--- Boot parameters ---
+BOOT_IMAGE=/@/boot/vmlinuz-6.17.13+2-amd64 root=UUID=1989bd42-6195-489a-8765-d1df7663aa88 ro rootflags=subvol=@ quiet splash noautomount quiet splash
+
+--- Recent dmesg (NVIDIA/nouveau, last 20 lines) ---
+[    3.546625] input: HDA NVidia HDMI/DP,pcm=3 as /devices/pci0000:00/0000:00:01.0/0000:01:00.1/sound/card1/input9
+[    3.546665] input: HDA NVidia HDMI/DP,pcm=7 as /devices/pci0000:00/0000:00:01.0/0000:01:00.1/sound/card1/input10
+[    3.548102] input: HDA NVidia HDMI/DP,pcm=8 as /devices/pci0000:00/0000:00:01.0/0000:01:00.1/sound/card1/input11
+[    3.548151] input: HDA NVidia HDMI/DP,pcm=9 as /devices/pci0000:00/0000:00:01.0/0000:01:00.1/sound/card1/input12

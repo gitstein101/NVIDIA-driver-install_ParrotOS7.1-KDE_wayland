@@ -1,0 +1,108 @@
+NVIDIA_FAILURE_LOG_VERSION=1
+TIMESTAMP=2026-02-15T04:16:05+01:00
+SCRIPT=nvidia-remove.sh
+EXIT_CODE=100
+FAILED_LINE=176
+FAILED_FUNCTION=main
+FAILED_COMMAND=apt autoremove -y
+FAILED_STEP_NUM=3
+FAILED_STEP=Removing NVIDIA packages
+TOTAL_STEPS=9
+DISTRO=debian
+KERNEL=6.17.13+2-amd64
+HOSTNAME=parrot
+---
+
+=== STEPS COMPLETED ===
+  [OK] 1: Stopping display manager
+  [OK] 2: Unloading NVIDIA kernel modules
+  [FAILED] 3: Removing NVIDIA packages
+
+=== CHANGES MADE (may need rollback) ===
+  - Stopped display manager
+  - Stopped nvidia-persistenced
+  - Unloaded NVIDIA kernel modules
+
+=== SYSTEM STATE AT FAILURE ===
+
+--- Loaded NVIDIA/nouveau modules ---
+nvidia_uvm           5038080  0
+nvidia_drm            126976  0
+drm_ttm_helper         16384  2 vmwgfx,nvidia_drm
+drm_client_lib         12288  2 vmwgfx,nvidia_drm
+drm_kms_helper        258048  4 vmwgfx,drm_ttm_helper,nvidia_drm,drm_client_lib
+nvidia_modeset       1605632  1 nvidia_drm
+nvidia              60710912  3 nvidia_uvm,nvidia_drm,nvidia_modeset
+drm                   843776  8 vmwgfx,drm_kms_helper,nvidia,drm_ttm_helper,nvidia_drm,drm_client_lib,ttm
+video                  81920  1 nvidia_modeset
+
+--- Installed NVIDIA packages ---
+ii  firmware-nvidia-graphics                            20250410-2                           all          Binary firmware for Nvidia GPU chips
+ii  firmware-nvidia-gsp                                 550.163.01-4parrot1                  amd64        NVIDIA GSP firmware
+ii  glx-alternative-nvidia                              1.2.2                                amd64        allows the selection of NVIDIA as GLX provider
+ii  libegl-nvidia0:amd64                                550.163.01-4parrot1                  amd64        NVIDIA binary EGL library
+ii  libgl1-nvidia-glvnd-glx:amd64                       550.163.01-4parrot1                  amd64        NVIDIA binary OpenGL/GLX library (GLVND variant)
+ii  libgles-nvidia1:amd64                               550.163.01-4parrot1                  amd64        NVIDIA binary OpenGL|ES 1.x library
+ii  libgles-nvidia2:amd64                               550.163.01-4parrot1                  amd64        NVIDIA binary OpenGL|ES 2.x library
+ii  libglx-nvidia0:amd64                                550.163.01-4parrot1                  amd64        NVIDIA binary GLX library
+ii  libnvidia-allocator1:amd64                          550.163.01-4parrot1                  amd64        NVIDIA allocator runtime library
+ii  libnvidia-cfg1:amd64                                550.163.01-4parrot1                  amd64        NVIDIA binary OpenGL/GLX configuration library
+ii  libnvidia-egl-gbm1:amd64                            1.1.2.1-1                            amd64        GBM EGL external platform library for NVIDIA
+ii  libnvidia-egl-wayland1:amd64                        1:1.1.18-1                           amd64        Wayland EGL External Platform library -- shared library
+ii  libnvidia-eglcore:amd64                             550.163.01-4parrot1                  amd64        NVIDIA binary EGL core libraries
+ii  libnvidia-glcore:amd64                              550.163.01-4parrot1                  amd64        NVIDIA binary OpenGL/GLX core libraries
+ii  libnvidia-glvkspirv:amd64                           550.163.01-4parrot1                  amd64        NVIDIA binary Vulkan Spir-V compiler library
+ii  libnvidia-gpucomp:amd64                             550.163.01-4parrot1                  amd64        NVIDIA binary GPU compiler library
+ii  libnvidia-ml1:amd64                                 550.163.01-4parrot1                  amd64        NVIDIA Management Library (NVML) runtime library
+ii  libnvidia-pkcs11-openssl3:amd64                     550.163.01-4parrot1                  amd64        NVIDIA PKCS #11 Library (OpenSSL 3)
+ii  libnvidia-ptxjitcompiler1:amd64                     550.163.01-4parrot1                  amd64        NVIDIA PTX JIT Compiler library
+ii  libnvidia-rtcore:amd64                              550.163.01-4parrot1                  amd64        NVIDIA binary Vulkan ray tracing (rtcore) library
+ii  nvidia-driver-bin                                   550.163.01-4parrot1                  amd64        NVIDIA driver support binaries
+ii  nvidia-driver-libs:amd64                            550.163.01-4parrot1                  amd64        NVIDIA metapackage (OpenGL/GLX/EGL/GLES libraries)
+ii  nvidia-egl-common                                   550.163.01-4parrot1                  amd64        NVIDIA binary EGL driver - common files
+ii  nvidia-egl-icd:amd64                                550.163.01-4parrot1                  amd64        NVIDIA EGL installable client driver (ICD)
+ii  nvidia-installer-cleanup                            20240109+1                           amd64        cleanup after driver installation with the nvidia-installer
+ii  nvidia-kernel-common                                20240109+1                           amd64        NVIDIA binary kernel module support files
+ii  nvidia-legacy-check                                 550.163.01-4parrot1                  amd64        check for NVIDIA GPUs requiring a legacy driver
+ii  nvidia-modprobe                                     570.133.07-1                         amd64        utility to load NVIDIA kernel modules and create device nodes
+ii  nvidia-persistenced                                 550.163.01-1                         amd64        daemon to maintain persistent software state in the NVIDIA driver
+ii  nvidia-settings                                     550.163.01-1                         amd64        tool for configuring the NVIDIA graphics driver
+ii  nvidia-smi                                          550.163.01-4parrot1                  amd64        NVIDIA System Management Interface
+ii  nvidia-support                                      20240109+1                           amd64        NVIDIA binary graphics driver support files
+ii  nvidia-suspend-common                               550.163.01-4parrot1                  amd64        NVIDIA driver - systemd power management scripts
+ii  nvidia-vdpau-driver:amd64                           550.163.01-4parrot1                  amd64        Video Decode and Presentation API for Unix - NVIDIA driver
+ii  nvidia-vulkan-common                                550.163.01-4parrot1                  amd64        NVIDIA Vulkan driver - common files
+ii  nvidia-vulkan-icd:amd64                             550.163.01-4parrot1                  amd64        NVIDIA Vulkan installable client driver (ICD)
+
+--- Display manager status ---
+inactive
+  not running
+
+--- Key config files ---
+  [EXISTS] /etc/modprobe.d/blacklist-nouveau.conf
+  [EXISTS] /etc/modprobe.d/blacklist-intel.conf
+  [EXISTS] /etc/X11/xorg.conf
+  [ABSENT] /etc/sddm.conf.d/10-wayland.conf
+  [EXISTS] /etc/environment
+
+--- Boot parameters ---
+BOOT_IMAGE=/@/boot/vmlinuz-6.17.13+2-amd64 root=UUID=1989bd42-6195-489a-8765-d1df7663aa88 ro rootflags=subvol=@ quiet splash noautomount quiet splash
+
+--- Recent dmesg (NVIDIA/nouveau, last 20 lines) ---
+[    3.832556] input: HDA NVidia HDMI/DP,pcm=3 as /devices/pci0000:00/0000:00:01.0/0000:01:00.1/sound/card1/input14
+[    3.832599] input: HDA NVidia HDMI/DP,pcm=7 as /devices/pci0000:00/0000:00:01.0/0000:01:00.1/sound/card1/input15
+[    3.832633] input: HDA NVidia HDMI/DP,pcm=8 as /devices/pci0000:00/0000:00:01.0/0000:01:00.1/sound/card1/input16
+[    3.832665] input: HDA NVidia HDMI/DP,pcm=9 as /devices/pci0000:00/0000:00:01.0/0000:01:00.1/sound/card1/input17
+[    5.041020] nvidia: loading out-of-tree module taints kernel.
+[    5.041028] nvidia: module license 'NVIDIA' taints kernel.
+[    5.041032] nvidia: module verification failed: signature and/or required key missing - tainting kernel
+[    5.041033] nvidia: module license taints kernel.
+[    5.407609] nvidia-nvlink: Nvlink Core is being initialized, major device number 239
+[    5.408776] nvidia 0000:01:00.0: vgaarb: VGA decodes changed: olddecodes=io+mem,decodes=none:owns=io+mem
+[    5.524483] NVRM: loading NVIDIA UNIX x86_64 Kernel Module  550.163.01  Tue Apr  8 12:41:17 UTC 2025
+[    7.186049] nvidia-modeset: Loading NVIDIA Kernel Mode Setting Driver for UNIX platforms  550.163.01  Tue Apr  8 12:09:34 UTC 2025
+[    8.888899] [drm] [nvidia-drm] [GPU ID 0x00000100] Loading driver
+[    8.888902] [drm] Initialized nvidia-drm 0.0.0 for 0000:01:00.0 on minor 0
+[   10.003628] audit: type=1400 audit(1771125049.227:164): apparmor="ALLOWED" operation="open" class="file" profile="Xorg" name="/etc/nvidia/current/nvidia-drm-outputclass.conf" pid=1023 comm="Xorg" requested_mask="r" denied_mask="r" fsuid=0 ouid=0
+[  251.396119] nvidia_uvm: module uses symbols nvUvmInterfaceDisableAccessCntr from proprietary module nvidia, inheriting taint.
+[  251.446735] nvidia-uvm: Loaded the UVM driver, major device number 237.

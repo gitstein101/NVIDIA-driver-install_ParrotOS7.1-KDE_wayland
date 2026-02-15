@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# NVIDIA Diagnostic Script v1.2
+# NVIDIA Diagnostic Script v1.3
 # Comprehensive system analysis with Wayland and dual-GPU diagnostics
 
 set -euo pipefail
@@ -20,28 +20,29 @@ DIAG_TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 OUTPUT_FILE="nvidia-diagnostic-${DIAG_TIMESTAMP}.log"
 JSON_FILE="nvidia-diagnostic-${DIAG_TIMESTAMP}.json"
 
-echo -e "${BLUE}=== NVIDIA Driver Diagnostic Tool v1.2 ===${NC}"
+echo -e "${BLUE}=== NVIDIA Driver Diagnostic Tool v1.3 ===${NC}"
 echo "Generating diagnostic report: $OUTPUT_FILE"
 echo ""
 
-# Function to print section headers
+# Function to print section headers (used outside tee blocks — writes to both stdout and file)
 print_header() {
     echo -e "\n${GREEN}=== $1 ===${NC}" | tee -a "$OUTPUT_FILE"
 }
 
-# Function to print warnings
+# Functions for warnings/errors — plain echo only.
+# These are called INSIDE { ... } | tee -a blocks, so the outer tee handles
+# writing to both stdout and the log file. Using tee here would double the output.
 print_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1" | tee -a "$OUTPUT_FILE"
+    echo -e "${YELLOW}[WARNING]${NC} $1"
 }
 
-# Function to print errors
 print_error() {
-    echo -e "${RED}[ERROR]${NC} $1" | tee -a "$OUTPUT_FILE"
+    echo -e "${RED}[ERROR]${NC} $1"
 }
 
 # Start diagnostic log
 {
-    echo "NVIDIA Driver Diagnostic Report v1.2"
+    echo "NVIDIA Driver Diagnostic Report v1.3"
     echo "Generated: $(date)"
     echo "System: $(hostname)"
     echo "=========================================="
@@ -362,7 +363,7 @@ print_header "Recent Relevant Logs"
     if [ -f /var/log/Xorg.0.log ]; then
         echo ""
         echo "=== X Server Log (errors/warnings) ==="
-        grep -E "(EE)|(WW)" /var/log/Xorg.0.log | tail -30
+        grep -E '\(EE\)|\(WW\)' /var/log/Xorg.0.log | tail -30 || true
     fi
 
     echo ""
@@ -529,16 +530,24 @@ print_header "Common Issues Analysis"
     fi
 
     # Check for missing kernel headers
-    if ! command -v dpkg &> /dev/null || ! dpkg -l 2>/dev/null | grep -q "linux-headers-$(uname -r)"; then
-        if ! command -v pacman &> /dev/null || ! pacman -Q 2>/dev/null | grep -q "linux-headers"; then
-            print_warning "Kernel headers may not be installed"
-            echo "  Fix: Install linux-headers for your kernel version"
-            ISSUES_FOUND=$((ISSUES_FOUND + 1))
+    HEADERS_OK=false
+    if command -v dpkg &> /dev/null; then
+        if dpkg -s "linux-headers-$(uname -r)" &>/dev/null; then
+            HEADERS_OK=true
         fi
+    elif command -v pacman &> /dev/null; then
+        if pacman -Q linux-headers &>/dev/null; then
+            HEADERS_OK=true
+        fi
+    fi
+    if [ "$HEADERS_OK" = false ]; then
+        print_warning "Kernel headers may not be installed"
+        echo "  Fix: Install linux-headers for your kernel version"
+        ISSUES_FOUND=$((ISSUES_FOUND + 1))
     fi
 
     # Check X server logs for errors
-    if [ -f /var/log/Xorg.0.log ] && grep -q "(EE)" /var/log/Xorg.0.log; then
+    if [ -f /var/log/Xorg.0.log ] && grep -qE '\(EE\)' /var/log/Xorg.0.log; then
         print_warning "X server errors detected in log"
         echo "  Check: /var/log/Xorg.0.log for details"
         ISSUES_FOUND=$((ISSUES_FOUND + 1))
@@ -849,7 +858,7 @@ echo -e "\n${BLUE}Generating JSON report: $JSON_FILE${NC}"
     # Write JSON
     cat << ENDJSON
 {
-  "version": "1.2",
+  "version": "1.3",
   "timestamp": "$(date -Iseconds)",
   "system": {
     "hostname": "${_hostname}",

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# NVIDIA Driver Installation Script v1.2
+# NVIDIA Driver Installation Script v1.3
 # Automated installation with dual-GPU support and Wayland/X11 session choice
 
 set -euo pipefail
@@ -30,7 +30,7 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 echo -e "${BLUE}==================================${NC}"
-echo -e "${BLUE}  NVIDIA Driver Installation v1.2${NC}"
+echo -e "${BLUE}  NVIDIA Driver Installation v1.3${NC}"
 echo -e "${BLUE}  Wayland + Dual-GPU Support${NC}"
 echo -e "${BLUE}==================================${NC}"
 echo ""
@@ -158,24 +158,49 @@ check_prerequisites() {
 
     # Repair broken dpkg state before anything else
     if [ "$DISTRO" = "debian" ]; then
+        # Check for packages in broken states: Half-installed, Unpacked, Failed-config, Triggers-awaited/pending
         BROKEN_PKGS=$(dpkg -l 2>/dev/null | awk '/^.[HUFWt]/{print $2}' || true)
-        if [ -n "$BROKEN_PKGS" ]; then
+        # Also check for packages in "removal" or "purge" desired states that are stuck (ri, rH, etc.)
+        STUCK_PKGS=$(dpkg -l 2>/dev/null | awk '/^r[iHUF]/{print $2}' || true)
+        # Check for "iU" (installed but Unpacked/half-configured)
+        IU_PKGS=$(dpkg -l 2>/dev/null | awk '/^iU/{print $2}' || true)
+
+        ALL_PROBLEM_PKGS="${BROKEN_PKGS} ${STUCK_PKGS} ${IU_PKGS}"
+        ALL_PROBLEM_PKGS=$(echo "$ALL_PROBLEM_PKGS" | xargs -n1 2>/dev/null | sort -u | xargs 2>/dev/null || true)
+
+        if [ -n "$ALL_PROBLEM_PKGS" ]; then
             echo -e "${YELLOW}Repairing broken package state...${NC}"
+            echo "  Problem packages: $ALL_PROBLEM_PKGS"
+
+            # Step 1: Try to configure pending packages
             dpkg --configure -a 2>/dev/null || true
             apt --fix-broken install -y 2>/dev/null || true
 
-            # Only force-remove packages that are still broken AND not essential
-            ESSENTIAL_PKGS="libc-bin|libc6|dpkg|apt|bash|coreutils|debianutils|diffutils|findutils|grep|gzip|hostname|login|ncurses-base|ncurses-bin|perl-base|sed|tar|util-linux|base-files|base-passwd|init-system-helpers|sysvinit-utils"
+            # Step 2: Force-remove NVIDIA packages that are still broken
+            # (These are the primary cause of install failures from prior botched runs)
             STILL_BROKEN=$(dpkg -l 2>/dev/null | awk '/^.[HUFWt]/{print $2}' || true)
-            for pkg in $STILL_BROKEN; do
-                if echo "$pkg" | grep -qE "^(${ESSENTIAL_PKGS})$"; then
-                    echo -e "${YELLOW}Skipping essential package: $pkg (run 'dpkg --configure -a' manually if needed)${NC}"
+            STUCK_REMAINING=$(dpkg -l 2>/dev/null | awk '/^r[iHUF]/{print $2}' || true)
+            IU_REMAINING=$(dpkg -l 2>/dev/null | awk '/^iU/{print $2}' || true)
+            ALL_REMAINING="${STILL_BROKEN} ${STUCK_REMAINING} ${IU_REMAINING}"
+            ALL_REMAINING=$(echo "$ALL_REMAINING" | xargs -n1 2>/dev/null | sort -u | xargs 2>/dev/null || true)
+
+            ESSENTIAL_RE="^(libc-bin|libc6|dpkg|apt|bash|coreutils|debianutils|diffutils|findutils|grep|gzip|hostname|login|ncurses-base|ncurses-bin|perl-base|sed|tar|util-linux|base-files|base-passwd|init-system-helpers|sysvinit-utils)$"
+            for pkg in $ALL_REMAINING; do
+                if echo "$pkg" | grep -qE "$ESSENTIAL_RE"; then
+                    echo -e "${YELLOW}  Skipping essential package: $pkg${NC}"
+                    dpkg --configure "$pkg" 2>/dev/null || true
+                elif echo "$pkg" | grep -qi "nvidia\|libnvidia"; then
+                    echo "  Force-removing broken NVIDIA package: $pkg"
+                    dpkg --remove --force-remove-reinstreq "$pkg" 2>/dev/null || true
                 else
+                    echo "  Force-removing broken package: $pkg"
                     dpkg --remove --force-remove-reinstreq "$pkg" 2>/dev/null || true
                 fi
             done
+
+            dpkg --configure -a 2>/dev/null || true
             apt --fix-broken install -y 2>/dev/null || true
-            record_change "Repaired broken dpkg packages: ${BROKEN_PKGS}"
+            record_change "Repaired broken dpkg packages: ${ALL_PROBLEM_PKGS}"
         fi
     fi
 
@@ -250,8 +275,24 @@ remove_old_drivers() {
         if dpkg -l 2>/dev/null | grep -q nvidia; then
             echo "Removing existing NVIDIA packages..."
             apt remove --purge -y '^nvidia-.*' '^libnvidia-.*' || true
+
+            # Repair broken state left by purge (same pattern as remove script)
+            dpkg --configure -a 2>/dev/null || true
             apt --fix-broken install -y 2>/dev/null || true
-            apt autoremove -y 2>/dev/null || true
+
+            # Clean up any NVIDIA packages stuck in broken states after purge
+            BROKEN_NV=$(dpkg -l 2>/dev/null | awk '/^.[HUFWt]/' | awk '{print $2}' | grep -i nvidia || true)
+            STUCK_NV=$(dpkg -l 2>/dev/null | awk '/^r[iHUF]/' | awk '{print $2}' | grep -i nvidia || true)
+            for pkg in $BROKEN_NV $STUCK_NV; do
+                echo "  Force-removing broken package: $pkg"
+                dpkg --remove --force-remove-reinstreq "$pkg" 2>/dev/null || true
+            done
+            dpkg --configure -a 2>/dev/null || true
+            apt --fix-broken install -y 2>/dev/null || true
+
+            if ! apt autoremove -y 2>/dev/null; then
+                echo -e "${YELLOW}autoremove failed — continuing (non-critical)${NC}"
+            fi
             record_change "Purged existing NVIDIA packages"
         fi
     elif [ "$DISTRO" = "arch" ]; then
@@ -282,21 +323,42 @@ install_nvidia() {
             exit 1
         fi
 
-        # Detect recommended driver
+        # Determine which driver package to install
+        DRIVER_PKG="nvidia-driver"
+        DRIVER_EXTRAS="nvidia-settings"
         if command -v ubuntu-drivers &> /dev/null; then
             echo "Detecting recommended driver..."
-            ubuntu-drivers devices
+            ubuntu-drivers devices || true
             RECOMMENDED=$(ubuntu-drivers devices 2>/dev/null | grep recommended | awk '{print $3}' || true)
             if [ -n "${RECOMMENDED:-}" ]; then
-                echo "Installing recommended driver: $RECOMMENDED"
-                apt install -y "$RECOMMENDED" nvidia-settings
-            else
-                echo "Installing default nvidia-driver package..."
-                apt install -y nvidia-driver nvidia-settings
+                DRIVER_PKG="$RECOMMENDED"
             fi
-        else
-            echo "Installing nvidia-driver package..."
-            apt install -y nvidia-driver nvidia-settings
+        fi
+
+        echo "Installing driver package: $DRIVER_PKG"
+
+        # Install with retry — first attempt may fail due to residual broken state
+        if ! apt install -y "$DRIVER_PKG" $DRIVER_EXTRAS; then
+            echo -e "${YELLOW}Install failed — repairing package state and retrying...${NC}"
+
+            # Repair: configure pending, fix broken, force-remove broken nvidia pkgs
+            dpkg --configure -a 2>/dev/null || true
+            apt --fix-broken install -y 2>/dev/null || true
+
+            BROKEN_NV=$(dpkg -l 2>/dev/null | awk '/^.[HUFWt]/' | awk '{print $2}' | grep -i "nvidia\|libnvidia" || true)
+            IU_NV=$(dpkg -l 2>/dev/null | awk '/^iU/' | awk '{print $2}' | grep -i "nvidia\|libnvidia" || true)
+            STUCK_NV=$(dpkg -l 2>/dev/null | awk '/^r[iHUF]/' | awk '{print $2}' | grep -i "nvidia\|libnvidia" || true)
+            for pkg in $BROKEN_NV $IU_NV $STUCK_NV; do
+                echo "  Force-removing broken package: $pkg"
+                dpkg --remove --force-remove-reinstreq "$pkg" 2>/dev/null || true
+            done
+
+            dpkg --configure -a 2>/dev/null || true
+            apt --fix-broken install -y 2>/dev/null || true
+
+            # Retry install
+            echo "Retrying driver installation..."
+            apt install -y "$DRIVER_PKG" $DRIVER_EXTRAS
         fi
 
         # Install EGL/Wayland packages if needed
@@ -425,7 +487,7 @@ configure_wayland() {
         if [ "$SESSION_TYPE" = "wayland" ]; then
             cat > /etc/sddm.conf.d/10-wayland.conf << 'EOF'
 # NVIDIA Wayland session configuration
-# Generated by nvidia-install.sh v1.2
+# Generated by nvidia-install.sh v1.3
 
 [General]
 DisplayServer=wayland
@@ -439,7 +501,7 @@ EOF
         else
             cat > /etc/sddm.conf.d/10-wayland.conf << 'EOF'
 # NVIDIA dual-session configuration (X11 + Wayland)
-# Generated by nvidia-install.sh v1.2
+# Generated by nvidia-install.sh v1.3
 # SDDM greeter runs on X11; Wayland sessions available at login
 
 [General]
@@ -462,7 +524,7 @@ EOF
         cat > /usr/local/bin/nvidia-lightdm-setup.sh << 'SCRIPT'
 #!/bin/bash
 # NVIDIA display setup for LightDM
-# Generated by nvidia-install.sh v1.2
+# Generated by nvidia-install.sh v1.3
 xrandr --setprovideroutputsource modesetting NVIDIA-0 2>/dev/null || true
 xrandr --auto 2>/dev/null || true
 SCRIPT
@@ -470,7 +532,7 @@ SCRIPT
 
         cat > "${LIGHTDM_CONF_DIR}/50-nvidia.conf" << 'EOF'
 # NVIDIA configuration for LightDM
-# Generated by nvidia-install.sh v1.2
+# Generated by nvidia-install.sh v1.3
 
 [LightDM]
 
@@ -538,7 +600,7 @@ configure_dual_gpu() {
 
         cat > /etc/X11/xorg.conf << EOF
 # Dual GPU Configuration — Force NVIDIA as Primary
-# Generated by nvidia-install.sh v1.2
+# Generated by nvidia-install.sh v1.3
 
 Section "ServerLayout"
     Identifier     "Layout0"
