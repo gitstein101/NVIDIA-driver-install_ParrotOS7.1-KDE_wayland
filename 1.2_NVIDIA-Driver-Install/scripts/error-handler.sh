@@ -109,6 +109,11 @@ _on_exit() {
         return 0
     fi
 
+    # Pre-condition exit (before any step started) — not an installation failure
+    if [ "$_CURRENT_STEP_NUM" -eq 0 ]; then
+        return 0
+    fi
+
     # Use ERR-captured context if available, otherwise derive from exit code
     local failed_line="${_ERR_LINE:-unknown}"
     local failed_func="${_ERR_FUNC:-unknown}"
@@ -229,7 +234,7 @@ _write_failure_log() {
     } > "$log_file" 2>/dev/null
 
     echo ""
-    echo -e "\033[0;31m=== FAILURE LOG WRITTEN ===${NC:-\033[0m}"
+    echo -e "\033[0;31m=== FAILURE LOG WRITTEN ===\033[0m"
     echo "  ${log_file}"
 }
 

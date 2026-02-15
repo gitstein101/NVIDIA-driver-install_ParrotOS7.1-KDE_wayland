@@ -59,13 +59,13 @@ detect_gpu() {
 
     if echo "$GPU_INFO" | grep -qi "nvidia"; then
         echo -e "${GREEN}NVIDIA GPU detected${NC}"
-        return 0
     else
         echo -e "${YELLOW}Warning: NVIDIA GPU not clearly detected${NC}"
         read -p "Continue anyway? (y/N): " -n 1 -r
         echo
         if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            exit 1
+            echo "Installation cancelled"
+            exit 0
         fi
     fi
     step_done
@@ -242,7 +242,10 @@ install_nvidia() {
 
     if [ "$DISTRO" = "debian" ]; then
         # Update package list
-        apt update
+        if ! apt update; then
+            echo -e "${RED}Package list update failed — check network connection and /etc/apt/sources.list${NC}"
+            exit 1
+        fi
 
         # Detect recommended driver
         if command -v ubuntu-drivers &> /dev/null; then
@@ -424,6 +427,7 @@ configure_dual_gpu() {
     NVIDIA_BUSID=$(lspci | grep -i "vga.*nvidia\|3d.*nvidia" | head -1 | cut -d' ' -f1 | sed 's/\./:/' || true)
     if [ -z "$NVIDIA_BUSID" ]; then
         echo -e "${RED}Could not detect NVIDIA BusID${NC}"
+        step_done
         return
     fi
 
@@ -560,9 +564,14 @@ configure_grub() {
         echo "Adding nvidia-drm.modeset=1 to GRUB..."
         echo "(Required for Wayland, recommended for X11)"
         sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="/GRUB_CMDLINE_LINUX_DEFAULT="nvidia-drm.modeset=1 /' "$GRUB_FILE"
-        update-grub 2>/dev/null || grub-mkconfig -o /boot/grub/grub.cfg
-        echo -e "${GREEN}GRUB configured${NC}"
-        record_change "Added nvidia-drm.modeset=1 to GRUB and ran update-grub"
+        if ! grep -q "nvidia-drm.modeset=1" "$GRUB_FILE"; then
+            echo -e "${YELLOW}WARNING: Could not add nvidia-drm.modeset=1 to GRUB automatically${NC}"
+            echo "Please add nvidia-drm.modeset=1 to GRUB_CMDLINE_LINUX_DEFAULT in $GRUB_FILE manually"
+        else
+            update-grub 2>/dev/null || grub-mkconfig -o /boot/grub/grub.cfg
+            echo -e "${GREEN}GRUB configured${NC}"
+            record_change "Added nvidia-drm.modeset=1 to GRUB and ran update-grub"
+        fi
     fi
     step_done
 }
