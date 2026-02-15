@@ -1,16 +1,16 @@
-# NVIDIA Driver Installation Project v1.2 - Getting Started
+# NVIDIA Driver Installation Project v1.3 - Getting Started
 
 ## Quick Start
 
 This project provides comprehensive tools and documentation for installing NVIDIA drivers on Linux, specifically tested on security-focused distributions like Parrot OS 7, BlackArch, and Kali Linux.
 
-**New in v1.2**: Choose between X11, Wayland, or both sessions during installation. Dual-GPU systems (Intel + NVIDIA) are handled automatically.
+**New in v1.3**: LightDM support, automatic dpkg repair, and multi-display-manager awareness. Choose between X11, Wayland, or both sessions during installation. Dual-GPU systems (Intel + NVIDIA) are handled automatically.
 
 ### For the Impatient
 
 **Automated Installation** (interactive — will ask you to choose X11/Wayland/Both):
 ```bash
-cd 1.2_NVIDIA-Driver-Install
+cd 1.3_NVIDIA-Driver-Install
 sudo ./scripts/nvidia-install.sh
 ```
 
@@ -27,7 +27,7 @@ sudo ./scripts/nvidia-remove.sh
 ## Project Structure
 
 ```
-1.2_NVIDIA-Driver-Install/
+1.3_NVIDIA-Driver-Install/
 ├── README.md                          # Main documentation (START HERE)
 ├── GETTING-STARTED.md                 # This file
 ├── scripts/
@@ -260,7 +260,7 @@ systemctl stop display-manager         # Stop (for fixes)
 
 ## Version Information
 
-- **v1.2** — Wayland support, dual-GPU integration, session-aware diagnostics
+- **v1.3** — LightDM support, dpkg repair, multi-DM awareness, improved error handling
 - Based on real-world troubleshooting with NVIDIA GT 1030 on Parrot OS 7, BlackArch, and Kali Linux
 
 Last updated: February 2026

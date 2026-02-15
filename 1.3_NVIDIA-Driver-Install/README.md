@@ -1,14 +1,14 @@
-# NVIDIA Driver Installation Project v1.2
+# NVIDIA Driver Installation Project v1.3
 
 ## Overview
-Comprehensive toolkit for installing and troubleshooting NVIDIA drivers on Linux systems, with focus on security-focused distributions. Version 1.2 adds **first-class Wayland session support** and **integrated dual-GPU handling**.
+Comprehensive toolkit for installing and troubleshooting NVIDIA drivers on Linux systems, with focus on security-focused distributions. Version 1.3 adds **LightDM support**, **dpkg broken-package repair**, and **improved error handling**.
 
-## What's New in v1.2
+## What's New in v1.3
 
-- **Wayland Support**: Choose X11, Wayland, or both during installation. Automatic configuration of GBM backend, environment variables, and SDDM Wayland sessions.
-- **Dual-GPU Integration**: Merged the standalone dual-GPU fix into the main installer. Auto-detects Intel iGPU + NVIDIA dGPU setups and configures display routing for both X11 and Wayland.
-- **Session-Aware Verification**: Diagnostics now detect the active session type and run appropriate checks (glxinfo/xrandr for X11, eglinfo/wayland-info for Wayland).
-- **Complete Cleanup**: Removal script now cleans up Wayland configs, dual-GPU services, and Intel blacklists.
+- **LightDM Support**: Auto-detects active display manager (SDDM, LightDM, GDM) and configures each appropriately. Creates NVIDIA display setup script for LightDM.
+- **dpkg Repair**: Automatically detects and repairs broken dpkg package state before installing prerequisites, with essential-package protection.
+- **Improved Error Handling**: Kernel header install failures now prompt the user instead of aborting. Better fallback behavior throughout.
+- **Multi-DM Awareness**: Installer configures all installed display managers, not just the active one, for easier switching.
 
 ## Target Hardware
 - **GPU**: NVIDIA GPUs (tested with GeForce GT 1030, GP108 architecture)
@@ -24,7 +24,7 @@ Comprehensive toolkit for installing and troubleshooting NVIDIA drivers on Linux
 ## Project Structure
 
 ```
-1.2_NVIDIA-Driver-Install/
+1.3_NVIDIA-Driver-Install/
 ├── README.md                          # This file
 ├── GETTING-STARTED.md                 # Quick start guide
 ├── scripts/
@@ -49,7 +49,7 @@ Comprehensive toolkit for installing and troubleshooting NVIDIA drivers on Linux
 
 ### Automated Installation
 ```bash
-cd 1.2_NVIDIA-Driver-Install
+cd 1.3_NVIDIA-Driver-Install
 sudo ./scripts/nvidia-install.sh
 ```
 
@@ -222,9 +222,10 @@ exit && sudo reboot
 
 ## Version History
 
+- **v1.3** - LightDM support, dpkg repair, multi-DM awareness, improved error handling
 - **v1.2** - Wayland session support, integrated dual-GPU handling, session-aware diagnostics
 - **v1.1** - Improved X server configuration with fallback
-- **v1.1b** - Standalone dual-GPU fix script (now merged into v1.2)
+- **v1.1b** - Standalone dual-GPU fix script (merged into v1.2)
 - **v1.0** - Initial documentation and scripts
 
 ## Resources
