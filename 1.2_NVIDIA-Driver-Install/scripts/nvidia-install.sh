@@ -216,7 +216,8 @@ remove_old_drivers() {
         if dpkg -l 2>/dev/null | grep -q nvidia; then
             echo "Removing existing NVIDIA packages..."
             apt remove --purge -y '^nvidia-.*' '^libnvidia-.*' || true
-            apt autoremove -y
+            apt --fix-broken install -y 2>/dev/null || true
+            apt autoremove -y 2>/dev/null || true
             record_change "Purged existing NVIDIA packages"
         fi
     elif [ "$DISTRO" = "arch" ]; then

@@ -173,11 +173,13 @@ echo -e "\n${BLUE}=== Removing NVIDIA Packages ===${NC}"
 if [ "$DISTRO" = "debian" ]; then
     apt remove --purge -y '^nvidia-.*' '^libnvidia-.*' || true
     apt remove --purge -y egl-wayland libnvidia-egl-wayland1 2>/dev/null || true
-    apt autoremove -y
-    apt clean
+    # Fix any broken dependencies left by the purge before autoremove
+    apt --fix-broken install -y 2>/dev/null || true
+    apt autoremove -y 2>/dev/null || true
+    apt clean 2>/dev/null || true
 elif [ "$DISTRO" = "arch" ]; then
     pacman -R --noconfirm nvidia nvidia-utils nvidia-settings nvidia-dkms egl-wayland 2>/dev/null || true
-    pacman -Sc --noconfirm
+    pacman -Sc --noconfirm 2>/dev/null || true
 fi
 record_change "Purged NVIDIA packages"
 step_done
