@@ -5,6 +5,12 @@
 
 set -euo pipefail
 
+# Load error handler
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "${SCRIPT_DIR}/error-handler.sh"
+init_failure_logging "remove" 9
+activate_traps
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -59,13 +65,18 @@ fi
 echo -e "${GREEN}Detected distribution: $DISTRO${NC}"
 
 # Stop display manager
+set_step 1 "Stopping display manager"
 echo -e "\n${BLUE}=== Stopping Display Manager ===${NC}"
 systemctl stop display-manager 2>/dev/null || echo "Display manager not running"
+record_change "Stopped display manager"
 
 # Stop nvidia-persistenced (common GPU consumer that blocks rmmod)
 systemctl stop nvidia-persistenced 2>/dev/null || true
+record_change "Stopped nvidia-persistenced"
+step_done
 
 # Unload NVIDIA modules
+set_step 2 "Unloading NVIDIA kernel modules"
 echo -e "\n${BLUE}=== Unloading NVIDIA Kernel Modules ===${NC}"
 
 unload_nvidia_modules() {
@@ -153,8 +164,11 @@ if lsmod | grep -q nvidia; then
 else
     echo "No NVIDIA modules loaded"
 fi
+record_change "Unloaded NVIDIA kernel modules"
+step_done
 
 # Remove packages
+set_step 3 "Removing NVIDIA packages"
 echo -e "\n${BLUE}=== Removing NVIDIA Packages ===${NC}"
 if [ "$DISTRO" = "debian" ]; then
     apt remove --purge -y '^nvidia-.*' '^libnvidia-.*' || true
@@ -165,8 +179,11 @@ elif [ "$DISTRO" = "arch" ]; then
     pacman -R --noconfirm nvidia nvidia-utils nvidia-settings nvidia-dkms egl-wayland 2>/dev/null || true
     pacman -Sc --noconfirm
 fi
+record_change "Purged NVIDIA packages"
+step_done
 
 # Remove configuration files
+set_step 4 "Removing X server configuration"
 echo -e "\n${BLUE}=== Removing Configuration Files ===${NC}"
 
 # Remove X configuration
@@ -179,8 +196,11 @@ if [ -d /etc/X11/xorg.conf.d ]; then
     echo "Checking /etc/X11/xorg.conf.d for NVIDIA configs..."
     find /etc/X11/xorg.conf.d -name "*nvidia*" -type f -delete
 fi
+record_change "Removed X server configuration files"
+step_done
 
 # Remove Wayland-specific configs
+set_step 5 "Removing Wayland configuration"
 echo -e "\n${BLUE}=== Removing Wayland Configuration ===${NC}"
 
 # Clean NVIDIA environment variables from /etc/environment
@@ -199,8 +219,11 @@ if [ -f /etc/sddm.conf.d/10-wayland.conf ]; then
     rm -f /etc/sddm.conf.d/10-wayland.conf
     echo "SDDM Wayland config removed"
 fi
+record_change "Removed Wayland configuration (environment vars, SDDM)"
+step_done
 
 # Remove dual-GPU service and script
+set_step 6 "Removing dual-GPU configuration"
 echo -e "\n${BLUE}=== Removing Dual-GPU Configuration ===${NC}"
 
 if [ -f /etc/systemd/system/nvidia-primary.service ]; then
@@ -222,8 +245,11 @@ if [ -f /etc/modprobe.d/blacklist-intel.conf ]; then
     rm -f /etc/modprobe.d/blacklist-intel.conf
     echo "Intel blacklist removed"
 fi
+record_change "Removed dual-GPU configuration (service, script, Intel blacklist)"
+step_done
 
 # Remove modprobe blacklist
+set_step 7 "Checking nouveau blacklist"
 echo -e "\n${BLUE}=== Checking Nouveau Blacklist ===${NC}"
 if [ -f /etc/modprobe.d/blacklist-nouveau.conf ]; then
     read -p "Remove nouveau blacklist? This will allow nouveau to load. (y/N): " -n 1 -r
@@ -249,8 +275,10 @@ if [ -n "$NVIDIA_MODPROBE_FILES" ]; then
 else
     echo "No NVIDIA modprobe configs found"
 fi
+step_done
 
 # Update initramfs
+set_step 8 "Updating initramfs"
 echo -e "\n${BLUE}=== Updating Initramfs ===${NC}"
 if [ "$DISTRO" = "debian" ]; then
     update-initramfs -u
@@ -300,8 +328,11 @@ if [ "$DM_STARTED" = false ]; then
     echo -e "${YELLOW}Display manager could not be restarted — this is normal${NC}"
     echo "A reboot is required for the fallback driver to initialize properly."
 fi
+record_change "Updated initramfs and loaded nouveau fallback driver"
+step_done
 
 # Remove GRUB parameters
+set_step 9 "Cleaning GRUB configuration"
 echo -e "\n${BLUE}=== Checking GRUB Configuration ===${NC}"
 GRUB_FILE="/etc/default/grub"
 if grep -q "nvidia" "$GRUB_FILE"; then
@@ -315,8 +346,10 @@ if grep -q "nvidia" "$GRUB_FILE"; then
         sed -i 's/nvidia-drm.modeset=0 //g' "$GRUB_FILE"
         update-grub 2>/dev/null || grub-mkconfig -o /boot/grub/grub.cfg
         echo -e "${GREEN}GRUB updated${NC}"
+        record_change "Removed NVIDIA parameters from GRUB"
     fi
 fi
+step_done
 
 # Verify removal
 echo -e "\n${BLUE}=== Verification ===${NC}"
