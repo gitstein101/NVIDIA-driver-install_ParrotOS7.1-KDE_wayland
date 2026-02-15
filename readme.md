@@ -20,13 +20,13 @@ Automated bash scripts for installing, diagnosing, and removing NVIDIA drivers o
 
 ```bash
 # Install
-sudo ./1.3_NVIDIA-Driver-Install/scripts/nvidia-install.sh
+sudo ./nvidia-toolkit/scripts/nvidia-install.sh
 
 # Diagnose
-sudo ./1.3_NVIDIA-Driver-Install/scripts/nvidia-diagnose.sh
+sudo ./nvidia-toolkit/scripts/nvidia-diagnose.sh
 
 # Remove
-sudo ./1.3_NVIDIA-Driver-Install/scripts/nvidia-remove.sh
+sudo ./nvidia-toolkit/scripts/nvidia-remove.sh
 ```
 
 All scripts are interactive and require root.
@@ -34,7 +34,7 @@ All scripts are interactive and require root.
 ## Repository Structure
 
 ```
-1.3_NVIDIA-Driver-Install/
+nvidia-toolkit/
   scripts/
     nvidia-install.sh       # Automated install
     nvidia-remove.sh        # Complete removal
@@ -46,4 +46,4 @@ All scripts are interactive and require root.
   README.md                 # Detailed toolkit documentation
 ```
 
-See `1.3_NVIDIA-Driver-Install/README.md` for full documentation, troubleshooting, and recovery procedures.
+See `nvidia-toolkit/README.md` for full documentation, troubleshooting, and recovery procedures.

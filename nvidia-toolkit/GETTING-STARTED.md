@@ -10,7 +10,7 @@ This project provides comprehensive tools and documentation for installing NVIDI
 
 **Automated Installation** (interactive — will ask you to choose X11/Wayland/Both):
 ```bash
-cd 1.3_NVIDIA-Driver-Install
+cd nvidia-toolkit
 sudo ./scripts/nvidia-install.sh
 ```
 
@@ -27,7 +27,7 @@ sudo ./scripts/nvidia-remove.sh
 ## Project Structure
 
 ```
-1.3_NVIDIA-Driver-Install/
+nvidia-toolkit/
 ├── README.md                          # Main documentation (START HERE)
 ├── GETTING-STARTED.md                 # This file
 ├── scripts/

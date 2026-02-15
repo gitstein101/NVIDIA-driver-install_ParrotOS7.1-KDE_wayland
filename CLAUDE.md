@@ -13,7 +13,7 @@ This is an NVIDIA driver installation toolkit for Linux, focused on security-ori
 ## Repository Structure
 
 ```
-1.3_NVIDIA-Driver-Install/       # Current toolkit (v1.3)
+nvidia-toolkit/       # Current toolkit (v1.3)
   scripts/
     nvidia-install.sh            # Automated install (root required, interactive prompts)
     nvidia-remove.sh             # Complete driver removal with cleanup

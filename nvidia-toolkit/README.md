@@ -23,7 +23,7 @@ Comprehensive toolkit for installing and troubleshooting NVIDIA drivers on Linux
 ## Project Structure
 
 ```
-1.3_NVIDIA-Driver-Install/
+nvidia-toolkit/
 ├── README.md                          # This file
 ├── GETTING-STARTED.md                 # Quick start guide
 ├── scripts/
@@ -47,7 +47,7 @@ Comprehensive toolkit for installing and troubleshooting NVIDIA drivers on Linux
 
 ### Automated Installation
 ```bash
-cd 1.3_NVIDIA-Driver-Install
+cd nvidia-toolkit
 sudo ./scripts/nvidia-install.sh
 ```
 
