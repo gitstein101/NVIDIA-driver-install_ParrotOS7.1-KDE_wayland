@@ -27,7 +27,6 @@ This is an NVIDIA driver installation toolkit for Linux, focused on security-ori
   examples/                      # Reference config files (xorg.conf, blacklist-nouveau, grub, sddm-wayland, etc.)
   GETTING-STARTED.md             # Setup walkthrough
   README.md                      # Toolkit overview
-00systemConfig_Info/             # Reference system configuration snapshots (EDID, OpenGL, Vulkan, Wayland, X-Server info)
 ```
 
 Prior versions (v1.0–v1.2) have been removed but are preserved in git history.

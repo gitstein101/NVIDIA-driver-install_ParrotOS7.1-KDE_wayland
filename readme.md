@@ -44,7 +44,6 @@ All scripts are interactive and require root.
   examples/                 # Reference config files
   GETTING-STARTED.md        # Setup walkthrough
   README.md                 # Detailed toolkit documentation
-00systemConfig_Info/        # Reference system config snapshots
 ```
 
 See `1.3_NVIDIA-Driver-Install/README.md` for full documentation, troubleshooting, and recovery procedures.
