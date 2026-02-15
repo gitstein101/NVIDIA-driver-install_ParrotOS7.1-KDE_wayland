@@ -220,14 +220,6 @@ exit && sudo reboot
 7. Have recovery plan ready (live USB)
 8. Test with `systemctl restart display-manager` before rebooting
 
-## Version History
-
-- **v1.3** - LightDM support, dpkg repair, multi-DM awareness, improved error handling
-- **v1.2** - Wayland session support, integrated dual-GPU handling, session-aware diagnostics
-- **v1.1** - Improved X server configuration with fallback
-- **v1.1b** - Standalone dual-GPU fix script (merged into v1.2)
-- **v1.0** - Initial documentation and scripts
-
 ## Resources
 
 - [Arch Wiki: NVIDIA](https://wiki.archlinux.org/title/NVIDIA)
