@@ -17,6 +17,8 @@ The repo is organized as versioned iterations of the toolkit:
 - `1.0_NVIDIA-Driver-Install/` - Initial version of scripts and docs
 - `1.1_NVIDIA-Driver-Install/` - Improved version with additional docs and examples
 - `1.1b_NVIDIA-Driver-Install_dual-gpu-fix/` - Standalone fix for dual-GPU (Intel iGPU + NVIDIA dGPU) display routing issue
+- `1.2_NVIDIA-Driver-Install/` - Wayland session support, integrated dual-GPU handling, session-aware diagnostics, failure logging
+- `1.3_NVIDIA-Driver-Install/` - LightDM support, dpkg broken-package repair, multi-display-manager awareness, improved error handling
 - `00systemConfig_Info/` - Reference system configuration snapshots (EDID, OpenGL, Vulkan, Wayland, X-Server info)
 
 Each versioned directory contains the same core structure:
@@ -25,8 +27,9 @@ scripts/
   nvidia-install.sh    # Automated install (root required, interactive prompts)
   nvidia-remove.sh     # Complete driver removal with cleanup
   nvidia-diagnose.sh   # Diagnostic report generator (outputs timestamped .log files)
+  error-handler.sh     # Shared failure logging library (v1.2+)
 docs/                  # Troubleshooting and distro-specific guides
-examples/              # Reference config files (xorg.conf, blacklist-nouveau, grub, mkinitcpio)
+examples/              # Reference config files (xorg.conf, blacklist-nouveau, grub, mkinitcpio, sddm-wayland)
 ```
 
 ## Script Architecture
@@ -38,17 +41,25 @@ All three core scripts share a common pattern:
 - Interactive `read -p` prompts for destructive or optional operations
 - Package manager abstraction: `apt` for Debian-based, `pacman` for Arch-based
 
-**nvidia-install.sh** flow: detect GPU -> backup configs -> install kernel headers -> blacklist nouveau -> remove old drivers -> install from repos -> optional xorg.conf generation -> optional GRUB nvidia-drm.modeset=1 -> verify
+**nvidia-install.sh** flow: detect GPU -> repair broken dpkg state (v1.3) -> backup configs -> install kernel headers -> blacklist nouveau -> remove old drivers -> install from repos -> detect session type (X11/Wayland/Both) -> configure display manager (SDDM/LightDM/GDM) -> optional dual-GPU setup -> GRUB nvidia-drm.modeset=1 -> verify
 
-**nvidia-remove.sh** flow: stop display manager -> unload kernel modules (nvidia_drm, nvidia_modeset, nvidia_uvm, nvidia) -> purge packages -> clean configs -> update initramfs -> optional GRUB cleanup
+**nvidia-remove.sh** flow: stop display manager -> unload kernel modules (nvidia_drm, nvidia_modeset, nvidia_uvm, nvidia) -> purge packages -> clean configs (including Wayland, LightDM, dual-GPU service) -> update initramfs -> optional GRUB cleanup
 
-**dual-gpu-fix.sh** addresses a specific issue where the monitor is connected to the NVIDIA card but X server defaults to Intel iGPU. It auto-detects the NVIDIA PCI BusID, creates xorg.conf with explicit BusID, optionally blacklists i915, and creates a systemd service (`nvidia-primary.service`) for xrandr provider setup.
+**nvidia-diagnose.sh** flow: detect session type (X11/Wayland) -> check GPU, modules, packages -> inspect display manager configs (SDDM, LightDM, GDM) -> check Wayland env vars -> detect dual-GPU -> generate timestamped report
+
+**error-handler.sh** (v1.2+): shared library sourced by other scripts. Provides step tracking, failure logging with timestamped log files, config file snapshots, and structured JSON diagnostic output.
+
+**dual-gpu-fix.sh** (v1.1b, merged into install.sh in v1.2+): addresses monitor connected to NVIDIA card but X server defaulting to Intel iGPU. Auto-detects NVIDIA PCI BusID, creates xorg.conf with explicit BusID, optionally blacklists i915, creates systemd service (`nvidia-primary.service`) for xrandr provider setup.
 
 ## Key System Paths Referenced
 
 - `/etc/modprobe.d/blacklist-nouveau.conf` - Nouveau blacklist config
 - `/etc/X11/xorg.conf` and `/etc/X11/xorg.conf.d/` - X server configuration
 - `/etc/default/grub` - GRUB boot parameters
+- `/etc/environment` - Wayland environment variables (GBM_BACKEND, __GLX_VENDOR_LIBRARY_NAME)
+- `/etc/sddm.conf.d/10-wayland.conf` - SDDM Wayland session config
+- `/etc/lightdm/lightdm.conf.d/50-nvidia.conf` - LightDM NVIDIA config
+- `/usr/local/bin/nvidia-lightdm-setup.sh` - LightDM display setup script
 - `/var/log/Xorg.0.log` - X server log
 - `/root/nvidia-backup-*` - Config backups created by install script
 
