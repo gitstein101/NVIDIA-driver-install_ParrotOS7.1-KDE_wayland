@@ -55,7 +55,7 @@ init_failure_logging() {
 #   Installs the ERR, EXIT, and INT trap handlers.
 #   Call after init_failure_logging.
 activate_traps() {
-    trap '_on_error ${LINENO} "${FUNCNAME[0]:-main}" "$BASH_COMMAND" $?' ERR
+    trap '_on_error ${LINENO} "${FUNCNAME[1]:-main}" "$BASH_COMMAND" $?' ERR
     trap '_on_exit $?' EXIT
     trap 'exit 130' INT
     _TRAPS_ACTIVE=true

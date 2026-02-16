@@ -313,6 +313,17 @@ step_done
 # Update initramfs
 set_step 8 "Updating initramfs"
 echo -e "\n${BLUE}=== Updating Initramfs ===${NC}"
+
+# Remove NVIDIA modules from initramfs early-load list
+INITRAMFS_MODULES="/etc/initramfs-tools/modules"
+if [ -f "$INITRAMFS_MODULES" ]; then
+    if grep -q "^nvidia" "$INITRAMFS_MODULES" 2>/dev/null; then
+        echo "Removing NVIDIA modules from initramfs early-load list..."
+        sed -i '/^nvidia$/d; /^nvidia_modeset$/d; /^nvidia_uvm$/d; /^nvidia_drm$/d' "$INITRAMFS_MODULES"
+        record_change "Removed nvidia modules from /etc/initramfs-tools/modules"
+    fi
+fi
+
 update-initramfs -u
 
 # Ensure fallback driver is available
@@ -367,8 +378,9 @@ if grep -q "nvidia" "$GRUB_FILE"; then
     read -p "Remove NVIDIA parameters from GRUB? (y/N): " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        sed -i 's/nvidia-drm.modeset=1 //g' "$GRUB_FILE"
-        sed -i 's/nvidia-drm.modeset=0 //g' "$GRUB_FILE"
+        sed -i 's/ *nvidia-drm\.modeset=[01]//g' "$GRUB_FILE"
+        sed -i 's/ *nvidia-drm\.fbdev=[01]//g' "$GRUB_FILE"
+        sed -i 's/ *NVreg_PreserveVideoMemoryAllocations=[01]//g' "$GRUB_FILE"
         update-grub 2>/dev/null || grub-mkconfig -o /boot/grub/grub.cfg
         echo -e "${GREEN}GRUB updated${NC}"
         record_change "Removed NVIDIA parameters from GRUB"

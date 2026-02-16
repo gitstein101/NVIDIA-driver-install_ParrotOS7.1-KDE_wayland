@@ -150,7 +150,7 @@ print_header "GPU Hardware Detection"
 
     echo ""
     echo "=== GPU Details ==="
-    lspci -v | grep -A 15 "VGA"
+    lspci -v | grep -A 15 "VGA" || true
 } | tee -a "$OUTPUT_FILE"
 
 # 4. Current Driver Status
@@ -410,7 +410,12 @@ print_header "GRUB Configuration"
 # 14. Kernel Headers
 print_header "Kernel Headers"
 {
-    dpkg -l 2>/dev/null | grep linux-headers | grep "$(uname -r | cut -d'-' -f1)" || echo "No matching headers found"
+    if dpkg -s "linux-headers-$(uname -r)" &>/dev/null; then
+        echo "linux-headers-$(uname -r): installed"
+    else
+        echo "linux-headers-$(uname -r): NOT installed"
+        print_warning "Kernel headers missing — NVIDIA module may fail to build after kernel updates"
+    fi
 } | tee -a "$OUTPUT_FILE"
 
 # 15. NVIDIA Wayland Deep Checks
