@@ -1,3 +1,6 @@
+# Claude Code local settings (contains machine-specific paths)
+.claude/
+
 # Runtime diagnostic output
 nvidia-toolkit/scripts/nvidia-diagnostic-*.log
 nvidia-toolkit/scripts/nvidia-diagnostic-*.json
