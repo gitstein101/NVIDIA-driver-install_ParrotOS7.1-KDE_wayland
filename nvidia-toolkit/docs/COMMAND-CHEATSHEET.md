@@ -103,6 +103,8 @@ pgrep Xwayland                         # XWayland bridge
 ### DRM/Modeset Status
 ```bash
 cat /sys/module/nvidia_drm/parameters/modeset  # Should be "Y"
+cat /sys/module/nvidia_drm/parameters/fbdev    # Should be "Y" (kernel 6.x+)
+cat /sys/module/nvidia/parameters/PreserveVideoMemoryAllocations  # Should be "1"
 cat /proc/cmdline | grep nvidia-drm    # Check boot params
 ```
 
@@ -128,11 +130,10 @@ xrandr --setprovideroutputsource modesetting NVIDIA-0  # Route output
 xrandr --auto                          # Auto-configure outputs
 ```
 
-### Dual-GPU Service
+### NVIDIA Power Management Services (Wayland suspend/resume)
 ```bash
-systemctl status nvidia-primary        # Check service status
-systemctl enable nvidia-primary        # Enable at boot
-systemctl disable nvidia-primary       # Disable
+systemctl is-enabled nvidia-suspend nvidia-resume nvidia-hibernate
+sudo systemctl enable nvidia-suspend nvidia-resume nvidia-hibernate
 ```
 
 ## Session Type Switching
@@ -146,7 +147,11 @@ systemctl disable nvidia-primary       # Disable
 
 ### Set Default Session
 ```bash
-# SDDM config: /etc/sddm.conf.d/10-wayland.conf
+# LightDM config: /etc/lightdm/lightdm.conf.d/50-nvidia-wayland.conf
+[Seat:*]
+user-session=plasma              # Default to Plasma (Wayland)
+
+# SDDM config (if using SDDM instead): /etc/sddm.conf.d/10-wayland.conf
 [General]
 Session=plasmawayland.desktop    # Default to Wayland
 # or
@@ -266,13 +271,16 @@ vblank_mode=0 glxgears               # Uncapped FPS test
 
 ### Configuration Files
 ```bash
-/etc/X11/xorg.conf                    # Main X config (optional)
+/etc/X11/xorg.conf                    # Main X config (dual-GPU greeter)
 /etc/X11/xorg.conf.d/                 # Modular X configs
 /etc/modprobe.d/blacklist-nouveau.conf # Nouveau blacklist
 /etc/modprobe.d/blacklist-intel.conf   # Intel blacklist (dual-GPU)
+/etc/modprobe.d/nvidia-wayland.conf   # NVIDIA module options (modeset, fbdev, PreserveVideoMemory)
+/etc/modules-load.d/nvidia.conf       # Early NVIDIA module loading
 /etc/default/grub                      # GRUB configuration
 /etc/environment                       # Wayland env vars (GBM_BACKEND etc.)
-/etc/sddm.conf.d/10-wayland.conf      # SDDM Wayland config
+/etc/lightdm/lightdm.conf.d/50-nvidia-wayland.conf  # LightDM Wayland config
+/usr/local/bin/nvidia-lightdm-setup.sh # LightDM greeter display setup
 ```
 
 ### Log Files
@@ -335,6 +343,8 @@ alias dm-restart='sudo systemctl restart display-manager'
 ### Common Parameters
 ```bash
 nvidia-drm.modeset=1      # Enable NVIDIA DRM kernel modesetting (REQUIRED for Wayland)
+nvidia-drm.fbdev=1        # Enable framebuffer console (recommended on kernel 6.x+)
+nvidia.NVreg_PreserveVideoMemoryAllocations=1  # Preserve VRAM on suspend (required for Wayland suspend/resume)
 nvidia-drm.modeset=0      # Disable NVIDIA DRM kernel modesetting
 nomodeset                 # Disable kernel modesetting (safe mode)
 nouveau.modeset=0         # Disable nouveau modesetting

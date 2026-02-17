@@ -59,7 +59,8 @@ journalctl -b | grep kwin_wayland
 # Check DRM/GBM errors
 journalctl -b | grep -i "drm\|gbm\|nvidia"
 
-# Check SDDM logs
+# Check LightDM logs (or SDDM if using that)
+journalctl -u lightdm -b
 journalctl -u sddm -b
 
 # Common fixes:
@@ -72,11 +73,14 @@ grep -E "GBM_BACKEND|__GLX_VENDOR" /etc/environment
 # 3. Ensure EGL-Wayland library is installed
 dpkg -l | grep egl-wayland
 
-# 4. Fall back to X11 session temporarily
-# Edit /etc/sddm.conf.d/10-wayland.conf and set DisplayServer=x11
-# Or remove the file entirely
-sudo rm /etc/sddm.conf.d/10-wayland.conf
+# 4. Ensure nvidia-drm.fbdev=1 is set (kernel 6.x+)
+cat /sys/module/nvidia_drm/parameters/fbdev
+
+# 5. Fall back to X11 session temporarily
+# Change LightDM default session to X11:
+sudo sed -i 's/user-session=plasma/user-session=plasmax11/' /etc/lightdm/lightdm.conf.d/50-nvidia-wayland.conf
 sudo systemctl restart display-manager
+# Or for SDDM: remove /etc/sddm.conf.d/10-wayland.conf
 ```
 
 ### Issue: Dual-GPU Display Routing (Wrong GPU Active)
@@ -250,7 +254,8 @@ cat /sys/module/nvidia_drm/parameters/modeset  # Modeset enabled
 ### X11 Issues
 ```bash
 grep "(EE)" /var/log/Xorg.0.log       # X server errors
-journalctl -u sddm -b                 # SDDM logs
+journalctl -u lightdm -b              # LightDM logs
+journalctl -u sddm -b                 # SDDM logs (if using SDDM)
 dmesg | grep -i nvidia                 # Kernel messages
 ```
 
@@ -258,7 +263,7 @@ dmesg | grep -i nvidia                 # Kernel messages
 ```bash
 journalctl -b | grep kwin_wayland     # KWin compositor logs
 journalctl -b | grep -i "drm\|gbm"   # DRM/GBM errors
-journalctl -u sddm -b                 # SDDM logs
+journalctl -u lightdm -b              # LightDM logs
 dmesg | grep -i nvidia                 # Kernel messages
 ```
 
@@ -333,13 +338,12 @@ sudo rm -f /etc/X11/xorg.conf.d/*nvidia*
 sudo rm -f /etc/modprobe.d/*nvidia*
 sudo rm -f /etc/modprobe.d/blacklist-intel.conf
 sudo rm -f /etc/sddm.conf.d/10-wayland.conf
+sudo rm -f /etc/lightdm/lightdm.conf.d/50-nvidia-wayland.conf
+sudo rm -f /usr/local/bin/nvidia-lightdm-setup.sh
 sudo sed -i '/^GBM_BACKEND=/d' /etc/environment
 sudo sed -i '/^__GLX_VENDOR_LIBRARY_NAME=/d' /etc/environment
-
-# Remove dual-GPU service
-sudo systemctl disable nvidia-primary 2>/dev/null
-sudo rm -f /etc/systemd/system/nvidia-primary.service
-sudo rm -f /usr/local/bin/nvidia-primary.sh
+sudo rm -f /etc/modprobe.d/nvidia-wayland.conf
+sudo rm -f /etc/modules-load.d/nvidia.conf
 
 # Start fresh
 sudo reboot

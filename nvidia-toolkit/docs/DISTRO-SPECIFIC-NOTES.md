@@ -5,24 +5,27 @@
 ### System Details
 - **Base**: Debian 12 (Bookworm)
 - **Default DE**: KDE Plasma
-- **Display Manager**: SDDM
+- **Display Manager**: LightDM (recommended by toolkit v1.4; Parrot ships with SDDM)
 - **Package Manager**: APT
 - **Init System**: systemd
 
 ### Known Issues
 
-#### 1. SDDM + NVIDIA Conflicts
-**Problem**: SDDM fails to start after NVIDIA driver installation, black screen on boot.
+#### 1. Display Manager + NVIDIA Conflicts
+**Problem**: Display manager fails to start after NVIDIA driver installation, black screen on boot.
 
 **Symptoms**:
 - Black screen after GRUB
 - TTY accessible (Ctrl+Alt+F2)
-- `systemctl status sddm` shows failed state
+- `systemctl status display-manager` shows failed state
 - `/var/log/Xorg.0.log` shows driver errors
 
 **Solutions**:
 
-**Option A: Switch to LightDM (Recommended for X11)**
+**Option A: Use the Installer (Recommended)**
+The `nvidia-install.sh` v1.4 script installs and configures LightDM automatically, disabling conflicting display managers.
+
+**Option B: Switch to LightDM Manually**
 ```bash
 sudo apt install lightdm
 sudo systemctl disable sddm
@@ -30,18 +33,11 @@ sudo systemctl enable lightdm
 sudo systemctl start lightdm
 ```
 
-**Option B: Reconfigure SDDM**
+**Option C: Reconfigure SDDM**
 ```bash
 sudo systemctl stop sddm
 sudo nvidia-xconfig
 sudo systemctl start sddm
-```
-
-**Option C: Use GDM**
-```bash
-sudo apt install gdm3
-# During installation, select GDM3 as default
-sudo systemctl restart display-manager
 ```
 
 #### 2. ACPI BIOS Errors
@@ -73,16 +69,25 @@ sudo reboot
 **Note**: `acpi=off` disables power management features. Try `noapic` first.
 
 #### 3. KDE Plasma Wayland Session
-**Problem**: Historically, NVIDIA + Wayland had poor support, and the recommendation was to disable Wayland. With driver 495+ and `nvidia-drm.modeset=1`, Wayland now works.
+**Problem**: Historically, NVIDIA + Wayland had poor support, and the recommendation was to disable Wayland. With driver 495+ and `nvidia-drm.modeset=1`, Wayland now works well.
 
-**Wayland Setup on Parrot OS 7**:
+**Automated Setup (Recommended)**:
+```bash
+# The v1.4 installer configures everything for LightDM + KDE Plasma Wayland:
+sudo ./scripts/nvidia-install.sh
+
+# Or reconfigure only (if drivers already installed):
+sudo ./scripts/nvidia-install.sh --config-only
+```
+
+**Manual Wayland Setup on Parrot OS 7**:
 ```bash
 # 1. Ensure driver 495+ is installed
 nvidia-smi --query-gpu=driver_version --format=csv,noheader
 
-# 2. Set required GRUB parameter
+# 2. Set required GRUB parameters
 # In /etc/default/grub:
-GRUB_CMDLINE_LINUX_DEFAULT="quiet splash nvidia-drm.modeset=1"
+GRUB_CMDLINE_LINUX_DEFAULT="quiet splash nvidia-drm.modeset=1 nvidia-drm.fbdev=1 nvidia.NVreg_PreserveVideoMemoryAllocations=1"
 sudo update-grub
 
 # 3. Set environment variables
@@ -92,27 +97,25 @@ __GLX_VENDOR_LIBRARY_NAME=nvidia
 EOF
 
 # 4. Install EGL-Wayland support
-sudo apt install libnvidia-egl-wayland1
+sudo apt install libnvidia-egl-wayland1 egl-wayland
 
-# 5. Configure SDDM for Wayland (optional — for Wayland-only)
-sudo mkdir -p /etc/sddm.conf.d
-sudo tee /etc/sddm.conf.d/10-wayland.conf << EOF
-[General]
-DisplayServer=wayland
-GreeterEnvironment=QT_WAYLAND_SHELL_INTEGRATION=layer-shell
-
-[Wayland]
-CompositorCommand=kwin_wayland --drm --no-lockscreen --no-global-shortcuts --locale1
+# 5. Create NVIDIA module options
+sudo tee /etc/modprobe.d/nvidia-wayland.conf << EOF
+options nvidia_drm modeset=1 fbdev=1
+options nvidia NVreg_PreserveVideoMemoryAllocations=1
 EOF
 
-# 6. Reboot and select "Plasma (Wayland)" at login
+# 6. Enable power management services
+sudo systemctl enable nvidia-suspend nvidia-resume nvidia-hibernate
+
+# 7. Reboot and select "Plasma (Wayland)" at login
 sudo reboot
 ```
 
 **If Wayland doesn't work**, fall back to X11:
 ```bash
-# Remove Wayland SDDM config
-sudo rm /etc/sddm.conf.d/10-wayland.conf
+# Select "Plasma (X11)" at the login screen session selector
+# Or from TTY:
 sudo systemctl restart display-manager
 ```
 
@@ -149,11 +152,11 @@ sudo reboot
 **If GUI won't start (X11)**:
 ```bash
 # Access TTY: Ctrl+Alt+F2
-journalctl -u sddm -b  # Check display manager logs
+journalctl -u lightdm -b  # Check display manager logs
 cat /var/log/Xorg.0.log | grep "(EE)"  # Check X errors
 
-# Try starting X manually
-startx
+# Try restarting display manager
+sudo systemctl restart display-manager
 ```
 
 **If GUI won't start (Wayland)**:
@@ -161,10 +164,11 @@ startx
 # Access TTY: Ctrl+Alt+F2
 journalctl -b | grep kwin_wayland     # Check compositor
 journalctl -b | grep -i "drm\|gbm"   # Check DRM
+journalctl -u lightdm -b              # Check LightDM
 
-# Fall back to X11
-sudo rm /etc/sddm.conf.d/10-wayland.conf
-sudo systemctl restart sddm
+# Fall back to X11 session at login screen, or remove and reinstall:
+sudo ./scripts/nvidia-remove.sh
+sudo reboot
 ```
 
 **If NVIDIA not detected**:
@@ -221,11 +225,12 @@ sudo apt-mark unhold nvidia-driver nvidia-utils
 ```
 
 #### 3. KDE Plasma Wayland on Kali
-Same setup as Parrot OS 7 — see the Wayland section above. Key steps:
+Same setup as Parrot OS 7 — use the v1.4 installer or see the manual Wayland section above. Key steps:
 1. Install `libnvidia-egl-wayland1`
-2. Set `nvidia-drm.modeset=1` in GRUB
+2. Set `nvidia-drm.modeset=1` and `nvidia-drm.fbdev=1` in GRUB
 3. Set `GBM_BACKEND=nvidia-drm` in `/etc/environment`
-4. Select "Plasma (Wayland)" at SDDM login
+4. Create `/etc/modprobe.d/nvidia-wayland.conf` with modeset and PreserveVideoMemory options
+5. Select "Plasma (Wayland)" at login screen
 
 ### Recommended Installation Method
 
@@ -302,9 +307,9 @@ sudo reboot
 | Kernel Updates | Stable | Semi-rolling | Stable |
 | NVIDIA Complexity | Medium | Medium | Low |
 | Recommended Driver | nvidia-driver | nvidia-driver | nvidia-driver |
-| Main Issue | SDDM conflicts | DE variety | Minimal |
+| Main Issue | DM conflicts | DE variety | Minimal |
 | Stability | High | Medium-High | High |
-| Best Display Manager | LightDM (X11) / SDDM (Wayland) | LightDM | GDM / LightDM |
+| Best Display Manager | LightDM | LightDM | GDM / LightDM |
 | Wayland Support | Good (KDE Plasma) | Good | Good |
 
 ---
@@ -340,9 +345,10 @@ sudo reboot
 ## Summary Recommendations
 
 ### For Parrot OS 7:
-- Use `nvidia-driver` package
+- Use `nvidia-install.sh` v1.4 for automated setup (LightDM + KDE Plasma Wayland)
 - `nvidia-drm.modeset=1` is mandatory (Wayland) / recommended (X11)
-- KDE Plasma Wayland works well with driver 495+
+- `nvidia-drm.fbdev=1` recommended on kernel 6.x+
+- KDE Plasma Wayland works well with driver 495+ (555+ for explicit sync)
 - Add ACPI workarounds if needed
 - Install `libnvidia-egl-wayland1` for Wayland
 
