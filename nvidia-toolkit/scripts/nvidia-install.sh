@@ -63,16 +63,11 @@ fi
 echo -e "${BLUE}==================================${NC}"
 echo ""
 
-# Detect distribution
-if [ -f /etc/debian_version ]; then
-    DISTRO="debian"
-else
+# Verify Debian-based distribution
+if [ ! -f /etc/debian_version ]; then
     echo -e "${RED}Unsupported distribution — this toolkit supports Debian-based systems only${NC}"
     exit 1
 fi
-
-echo -e "${GREEN}Detected distribution: $DISTRO${NC}"
-echo ""
 
 # Function to detect GPU
 detect_gpu() {

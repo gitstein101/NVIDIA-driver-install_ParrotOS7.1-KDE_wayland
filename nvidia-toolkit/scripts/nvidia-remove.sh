@@ -52,15 +52,11 @@ else
     fi
 fi
 
-# Detect distribution
-if [ -f /etc/debian_version ]; then
-    DISTRO="debian"
-else
+# Verify Debian-based distribution
+if [ ! -f /etc/debian_version ]; then
     echo -e "${RED}Unsupported distribution — this toolkit supports Debian-based systems only${NC}"
     exit 1
 fi
-
-echo -e "${GREEN}Detected distribution: $DISTRO${NC}"
 
 # Stop display manager
 set_step 1 "Stopping display manager"
@@ -168,50 +164,49 @@ step_done
 # Remove packages
 set_step 3 "Removing NVIDIA packages"
 echo -e "\n${BLUE}=== Removing NVIDIA Packages ===${NC}"
-if [ "$DISTRO" = "debian" ]; then
-    # Phase 1: Purge NVIDIA packages via apt
-    apt remove --purge -y '^nvidia-.*' '^libnvidia-.*' || true
-    apt remove --purge -y egl-wayland libnvidia-egl-wayland1 2>/dev/null || true
 
-    # Phase 2: Repair dpkg state before autoremove
-    # The purge often leaves packages in broken (iU/rH/ri) states that crash autoremove
+# Phase 1: Purge NVIDIA packages via apt
+apt remove --purge -y '^nvidia-.*' '^libnvidia-.*' || true
+apt remove --purge -y egl-wayland libnvidia-egl-wayland1 2>/dev/null || true
+
+# Phase 2: Repair dpkg state before autoremove
+# The purge often leaves packages in broken (iU/rH/ri) states that crash autoremove
+dpkg --configure -a 2>/dev/null || true
+apt --fix-broken install -y 2>/dev/null || true
+
+# Phase 3: Force-remove any NVIDIA packages still in broken states
+BROKEN_NVIDIA=$(dpkg -l 2>/dev/null | awk '/^.[HUFWt]/' | awk '{print $2}' | grep -i nvidia || true)
+if [ -n "$BROKEN_NVIDIA" ]; then
+    echo -e "${YELLOW}Cleaning broken NVIDIA packages via dpkg...${NC}"
+    for pkg in $BROKEN_NVIDIA; do
+        echo "  Force-removing broken package: $pkg"
+        dpkg --remove --force-remove-reinstreq "$pkg" 2>/dev/null || true
+    done
     dpkg --configure -a 2>/dev/null || true
     apt --fix-broken install -y 2>/dev/null || true
+fi
 
-    # Phase 3: Force-remove any NVIDIA packages still in broken states
-    BROKEN_NVIDIA=$(dpkg -l 2>/dev/null | awk '/^.[HUFWt]/' | awk '{print $2}' | grep -i nvidia || true)
-    if [ -n "$BROKEN_NVIDIA" ]; then
-        echo -e "${YELLOW}Cleaning broken NVIDIA packages via dpkg...${NC}"
-        for pkg in $BROKEN_NVIDIA; do
+# Phase 4: Safe autoremove with retry
+if ! apt autoremove -y 2>/dev/null; then
+    echo -e "${YELLOW}autoremove failed — repairing and retrying...${NC}"
+    dpkg --configure -a 2>/dev/null || true
+    apt --fix-broken install -y 2>/dev/null || true
+    # Force-remove any remaining broken packages (not just nvidia)
+    ALL_BROKEN=$(dpkg -l 2>/dev/null | awk '/^.[HUFWt]/{print $2}' || true)
+    ESSENTIAL_RE="^(libc-bin|libc6|dpkg|apt|bash|coreutils|debianutils|diffutils|findutils|grep|gzip|hostname|login|ncurses-base|ncurses-bin|perl-base|sed|tar|util-linux|base-files|base-passwd|init-system-helpers|sysvinit-utils)$"
+    for pkg in $ALL_BROKEN; do
+        if echo "$pkg" | grep -qE "$ESSENTIAL_RE"; then
+            echo -e "${YELLOW}  Skipping essential broken package: $pkg${NC}"
+            dpkg --configure "$pkg" 2>/dev/null || true
+        else
             echo "  Force-removing broken package: $pkg"
             dpkg --remove --force-remove-reinstreq "$pkg" 2>/dev/null || true
-        done
-        dpkg --configure -a 2>/dev/null || true
-        apt --fix-broken install -y 2>/dev/null || true
-    fi
-
-    # Phase 4: Safe autoremove with retry
-    if ! apt autoremove -y 2>/dev/null; then
-        echo -e "${YELLOW}autoremove failed — repairing and retrying...${NC}"
-        dpkg --configure -a 2>/dev/null || true
-        apt --fix-broken install -y 2>/dev/null || true
-        # Force-remove any remaining broken packages (not just nvidia)
-        ALL_BROKEN=$(dpkg -l 2>/dev/null | awk '/^.[HUFWt]/{print $2}' || true)
-        ESSENTIAL_RE="^(libc-bin|libc6|dpkg|apt|bash|coreutils|debianutils|diffutils|findutils|grep|gzip|hostname|login|ncurses-base|ncurses-bin|perl-base|sed|tar|util-linux|base-files|base-passwd|init-system-helpers|sysvinit-utils)$"
-        for pkg in $ALL_BROKEN; do
-            if echo "$pkg" | grep -qE "$ESSENTIAL_RE"; then
-                echo -e "${YELLOW}  Skipping essential broken package: $pkg${NC}"
-                dpkg --configure "$pkg" 2>/dev/null || true
-            else
-                echo "  Force-removing broken package: $pkg"
-                dpkg --remove --force-remove-reinstreq "$pkg" 2>/dev/null || true
-            fi
-        done
-        apt --fix-broken install -y 2>/dev/null || true
-        apt autoremove -y 2>/dev/null || true
-    fi
-    apt clean 2>/dev/null || true
+        fi
+    done
+    apt --fix-broken install -y 2>/dev/null || true
+    apt autoremove -y 2>/dev/null || true
 fi
+apt clean 2>/dev/null || true
 record_change "Purged NVIDIA packages"
 step_done
 

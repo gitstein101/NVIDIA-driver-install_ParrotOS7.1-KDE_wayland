@@ -151,7 +151,8 @@ _write_failure_log() {
     file_timestamp=$(date +%Y%m%d-%H%M%S)
     local log_file="${_FAILURE_LOG_DIR}/${_FAILURE_LOG_PREFIX}-${file_timestamp}.log"
 
-    local distro_val="${DISTRO:-unknown}"
+    local distro_val
+    distro_val=$(grep PRETTY_NAME /etc/os-release 2>/dev/null | cut -d= -f2 | tr -d '"' || echo "unknown")
     local kernel_val
     kernel_val=$(uname -r 2>/dev/null || echo "unknown")
     local hostname_val
@@ -186,7 +187,7 @@ _write_failure_log() {
         if [ -n "$_CURRENT_STEP_DESC" ]; then
             local already_done=false
             for entry in "${_STEPS_COMPLETED[@]}"; do
-                if [[ "$entry" == "${_CURRENT_STEP_NUM}:"* ]]; then
+                if [[ "$entry" == "${_CURRENT_STEP_NUM}: "* ]]; then
                     already_done=true
                     break
                 fi
@@ -221,9 +222,7 @@ _write_failure_log() {
         echo ""
 
         echo "--- Broken/half-installed packages ---"
-        if command -v dpkg &> /dev/null; then
-            dpkg -l 2>/dev/null | awk '/^.[HUFWt]/' || echo "  (none)"
-        fi
+        dpkg -l 2>/dev/null | awk '/^.[HUFWt]/' || echo "  (none)"
         echo ""
 
         echo "--- Display manager status ---"
@@ -249,7 +248,11 @@ _write_failure_log() {
         echo "--- Recent dmesg (NVIDIA/nouveau, last 20 lines) ---"
         dmesg 2>/dev/null | grep -i "nvidia\|nouveau" | tail -20 || echo "  (unavailable)"
 
-    } > "$log_file" 2>/dev/null
+    } > "$log_file" 2>/dev/null || {
+        # Fallback: try /tmp if primary location failed
+        log_file="/tmp/${_FAILURE_LOG_PREFIX}-${file_timestamp}.log"
+        echo "(primary log location failed, using /tmp)" >&2
+    }
 
     echo ""
     echo -e "\033[0;31m=== FAILURE LOG WRITTEN ===\033[0m"
