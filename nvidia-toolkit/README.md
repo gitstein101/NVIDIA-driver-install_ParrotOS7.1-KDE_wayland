@@ -43,7 +43,6 @@ nvidia-toolkit/
 │   └── DISTRO-SPECIFIC-NOTES.md       # Per-distro guidance
 └── examples/
     ├── environment.example             # Wayland env vars (GBM_BACKEND etc.)
-    ├── sddm-wayland.conf.example       # SDDM Wayland session config (reference)
     ├── xorg.conf.example               # X server config (with dual-GPU BusID)
     ├── grub.example                    # GRUB configuration
     └── blacklist-nouveau.conf          # Nouveau blacklist

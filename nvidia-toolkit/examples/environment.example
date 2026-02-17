@@ -2,8 +2,7 @@
 # Location: /etc/environment
 #
 # These variables are required for NVIDIA GPUs on Wayland sessions.
-# The nvidia-install.sh script sets these automatically when you
-# choose "Wayland" or "Both" session types.
+# The nvidia-install.sh v1.4 script sets these automatically.
 #
 # After modifying, log out and back in for changes to take effect.
 

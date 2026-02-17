@@ -2,8 +2,7 @@
 # Location: /etc/default/grub
 #
 # After modifying, run:
-# Debian/Ubuntu: sudo update-grub
-# Arch: sudo grub-mkconfig -o /boot/grub/grub.cfg
+# sudo update-grub
 
 # Default entry
 GRUB_DEFAULT=0
@@ -13,9 +12,10 @@ GRUB_TIMEOUT=5
 GRUB_TIMEOUT_STYLE=menu
 
 # Kernel parameters for NVIDIA
-# NOTE: nvidia-drm.modeset=1 is REQUIRED for Wayland sessions
-# and recommended for X11 (enables DRM kernel modesetting)
-GRUB_CMDLINE_LINUX_DEFAULT="quiet splash nvidia-drm.modeset=1"
+# nvidia-drm.modeset=1 — REQUIRED for Wayland (enables DRM kernel modesetting)
+# nvidia-drm.fbdev=1   — Recommended on kernel 6.x+ (framebuffer console)
+# nvidia.NVreg_PreserveVideoMemoryAllocations=1 — Required for suspend/resume on Wayland
+GRUB_CMDLINE_LINUX_DEFAULT="quiet splash nvidia-drm.modeset=1 nvidia-drm.fbdev=1 nvidia.NVreg_PreserveVideoMemoryAllocations=1"
 
 # For ACPI issues (common on Parrot OS 7):
 # GRUB_CMDLINE_LINUX_DEFAULT="quiet splash nvidia-drm.modeset=1 noapic"

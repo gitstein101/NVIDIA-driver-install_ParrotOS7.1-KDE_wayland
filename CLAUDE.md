@@ -25,7 +25,7 @@ nvidia-toolkit/
     DISTRO-SPECIFIC-NOTES.md     # Per-distro guidance (Parrot, Kali, Ubuntu/Debian)
     QUICK-TROUBLESHOOTING.md     # Common issues and fixes
     WAYLAND-SUPPORT.md           # Wayland-specific configuration guide
-  examples/                      # Reference config files (xorg.conf, blacklist-nouveau, grub, sddm-wayland, etc.)
+  examples/                      # Reference config files (xorg.conf, blacklist-nouveau, grub, environment)
   GETTING-STARTED.md             # Setup walkthrough
   README.md                      # Toolkit overview
 ```

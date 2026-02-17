@@ -53,7 +53,6 @@ nvidia-toolkit/
 │   └── DISTRO-SPECIFIC-NOTES.md       # Per-distro guidance
 └── examples/
     ├── environment.example             # Wayland env vars
-    ├── sddm-wayland.conf.example       # SDDM Wayland config (reference)
     ├── xorg.conf.example               # X server config (with dual-GPU BusID)
     ├── grub.example                    # GRUB configuration
     └── blacklist-nouveau.conf          # Nouveau blacklist
@@ -201,7 +200,6 @@ cat nvidia-diagnostic-*.json      # Machine-parseable
 Located in `examples/` directory:
 
 - **environment.example**: Copy to `/etc/environment` — Wayland env vars
-- **sddm-wayland.conf.example**: Reference for SDDM Wayland config (toolkit uses LightDM)
 - **xorg.conf.example**: Copy to `/etc/X11/xorg.conf` (includes dual-GPU BusID section)
 - **blacklist-nouveau.conf**: Copy to `/etc/modprobe.d/blacklist-nouveau.conf`
 - **grub.example**: Reference for `/etc/default/grub`
